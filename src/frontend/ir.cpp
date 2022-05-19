@@ -5,7 +5,7 @@ namespace IR
 
     PrintContext print_ctx;
 
-    ostream &operator<<(ostream &os, const Printable &r)
+    ostream &operator<<(ostream &os, const print &r)
     {
         r.print(os);
         return os;
