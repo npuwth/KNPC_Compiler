@@ -1,9 +1,63 @@
-project(nwpu-sysy-compiler CXX)
-cmake_minimum_required(VERSION 3.16)
-#aux_source_directory(. DIR_SRC)
-file(GLOB_RECURSE DIR_SRC "src/*.cpp")
-file(GLOB_RECURSE DIR_LIB_SRC "third_party/*.cpp")
-add_compile_options(-g -std=c++17 -O2)
-include_directories(src)
-include_directories(third_party/antlr4-runtime)
-add_executable(compiler ${DIR_SRC} ${DIR_LIB_SRC})
+cmake_minimum_required(VERSION 3.10)
+project(SysY)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+find_package(Java)
+
+include_directories(
+    ${PROJECT_SOURCE_DIR}/third_party/
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/
+    ${PROJECT_SOURCE_DIR}/src/frontend/
+    ${PROJECT_SOURCE_DIR}/src/backend/
+    ${PROJECT_SOURCE_DIR}/src/optimization/
+)
+
+file(GLOB antlr4-cpp-src
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/atn/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/dfa/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/misc/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/support/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/tree/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/tree/pattern/*.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/tree/xpath/*.cpp
+)
+add_library(antlr4-cpp-runtime ${antlr4-cpp-src})
+
+execute_process(
+    WORKING_DIRECTORY
+        ${PROJECT_SOURCE_DIR}/src/frontend/parser/
+    # Note that this command runs in pure shell
+    COMMAND
+        java -jar ${PROJECT_SOURCE_DIR}/third_party/antlr-4.8-complete.jar -Dlanguage=Cpp -no-listener -visitor SysY.g4
+)
+
+file(GLOB src_dir
+    ${PROJECT_SOURCE_DIR}/src/frontend/parser/SysYLexer.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/parser/SysYParser.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/parser/SysYVisitor.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/parser/SysYBaseVisitor.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/scope/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/symbol/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/tac/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/translation/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/type/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/optimization/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/backend/asm/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/*.cpp
+)
+
+add_executable(SysY ${src_dir})
+target_link_libraries(SysY antlr4-cpp-runtime)
+
+# Add custom target update_antlr, use `make update_antlr` to update your lexer & grammar rules anytime
+add_custom_target(update_antlr
+    WORKING_DIRECTORY
+        ${PROJECT_SOURCE_DIR}/src/frontend/parser/
+    COMMAND 
+        java -jar ${PROJECT_SOURCE_DIR}/third_party/antlr-4.8-complete.jar -Dlanguage=Cpp -no-listener -visitor SysY.g4
+    COMMENT 
+        "Auto updates for developing antlr grammar"
+)
