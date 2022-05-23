@@ -11,7 +11,8 @@ test/out
 *.s
 a.out
 **/.DS_Store
-./vscode/**
+.vscode/**
+src/.vscode/**
 
 ## CPP IGNORE
 # Prerequisites

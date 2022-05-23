@@ -7,7 +7,7 @@
                 "${workspaceFolder}/src/**",
                 "${workspaceFolder}/src/frontend/**",
                 "${workspaceFolder}/src/backend/**",
-                "${workspaceFolder}/src/common/**"
+                "${workspaceFolder}/src/3rdparty/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
