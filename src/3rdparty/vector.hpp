@@ -6,14 +6,14 @@
  *  Keltin Leung 
  */
 
-#ifndef __MIND_VECTOR__
-#define __MIND_VECTOR__
+#ifndef __KNPC_VECTOR__
+#define __KNPC_VECTOR__
 
 #include "boehmgc.hpp"
 
 #include <vector>
 
-namespace mind {
+namespace knpc {
 
   namespace util {
 
@@ -25,4 +25,4 @@ namespace mind {
   }  
 }
 
-#endif // __MIND_VECTOR__
+#endif // __KNPC_VECTOR__

@@ -1,9 +1,9 @@
-#ifndef __MIND_TAC__
-#define __MIND_TAC__
+#ifndef __KNPC_TAC__
+#define __KNPC_TAC__
 #include <iostream>
 #include  "define.hpp"
-namespace mind{
-#define MIND_TAC_DEFINED
+namespace knpc{
+#define KNPC_TAC_DEFINED
 namespace tac{
     typedef struct TempVariable
     {
@@ -155,4 +155,4 @@ namespace tac{
     };
 } // namespace tac
 }
-#endif // __MIND_TAC__
+#endif // __KNPC_TAC__

@@ -1,18 +1,11 @@
 /**
- * @file build_sym.cpp
- * @author your name (you@domain.com)
- * @brief 1st PASS of semantic analysis
- * @version 0.1
- * @date 2022-05-21
- * 
- * @copyright Copyright (c) 2022
- * 
+ * 1st PASS of semantic analysis
  * After this pass, the symbol table will be constructed!
+ * 
  */
 
 #include "SysYBaseVisitor.h"
-
-#include<memory>
+#include "define.hpp"
 
 class SemPass1 : public SysYVisitor {
     // visit declarations

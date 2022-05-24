@@ -71,14 +71,14 @@
  *  Keltin Leung 
  */
 
-#ifndef __MIND_SET__
-#define __MIND_SET__
+#ifndef __KNPC_SET__
+#define __KNPC_SET__
 
 #include "boehmgc.hpp"
 
 #include <algorithm>
 
-namespace mind {
+namespace knpc {
 
   namespace util {
 
@@ -251,4 +251,4 @@ namespace mind {
   }  
 }
 
-#endif // __MIND_SET__
+#endif // __KNPC_SET__

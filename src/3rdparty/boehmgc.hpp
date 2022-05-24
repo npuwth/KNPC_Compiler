@@ -9,8 +9,8 @@
  *        the first line in EACH of your *.cpp files.
  */
 
-#ifndef __MIND_BOEHMGC__
-#define __MIND_BOEHMGC__
+#ifndef __KNPC_BOEHMGC__
+#define __KNPC_BOEHMGC__
 
 #include <gc/gc_allocator.h>
 #include <gc/gc.h>
@@ -42,4 +42,4 @@ inline void operator delete[](void *) {
 
 #define __GC
 
-#endif /* __MIND_BOEHMGC__ */
+#endif /* __KNPC_BOEHMGC__ */

@@ -12,8 +12,8 @@
  *  Keltin Leung 
  */
 
-#ifndef __MIND_HASH__
-#define __MIND_HASH__
+#ifndef __KNPC_HASH__
+#define __KNPC_HASH__
 
 #include "boehmgc.hpp"
 
@@ -24,7 +24,7 @@
 
 using std::size_t;
 
-namespace mind {
+namespace knpc {
 
   namespace util {
 
@@ -405,4 +405,4 @@ namespace mind {
   }
 }
 	
-#endif // _MIND_HASH__
+#endif // _KNPC_HASH__

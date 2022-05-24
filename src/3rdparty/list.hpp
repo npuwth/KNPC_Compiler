@@ -50,15 +50,15 @@
  *  Keltin Leung 
  */
 
-#ifndef __MIND_LIST__
-#define __MIND_LIST__
+#ifndef __KNPC_LIST__
+#define __KNPC_LIST__
 
 #include "boehmgc.hpp"
 
 #include <list>
 #include <iostream>
 
-namespace mind {
+namespace knpc {
 
   namespace util {
 
@@ -131,4 +131,4 @@ namespace mind {
   }  
 }
 
-#endif // __MIND_LIST__
+#endif // __KNPC_LIST__

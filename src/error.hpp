@@ -1,5 +1,5 @@
 /*****************************************************
- *  Error Management of the Mind Compiler.
+ *  Error Management of the Knpc Compiler.
  *
  *  Keltin Leung 
  */
@@ -21,14 +21,14 @@ namespace knpc {
  */
 namespace err {
 // compiler errors, all errors are subclass of it
-class MindError {
+class KnpcError {
   public:
     virtual void printTo(std::ostream &) = 0;
-    virtual ~MindError() {}
+    virtual ~KnpcError() {}
 };
 
 // issues an error
-void issue(Location *, MindError *);
+void issue(Location *, KnpcError *);
 // gets the number of errors having been issued so far
 int numOfErrors(void);
 // prints a debug message
@@ -39,7 +39,7 @@ void bad_assertion(const char *, const char *, int);
 void checkPoint(void);
 
 // 0: Unrecognized Character Error
-class UnrecogCharError : public MindError {
+class UnrecogCharError : public KnpcError {
   public:
     UnrecogCharError(char);
     virtual void printTo(std::ostream &);
@@ -49,19 +49,19 @@ class UnrecogCharError : public MindError {
 };
 
 // 1: Integer Literal is Too Large Error
-class IntTooLargeError : public MindError {
+class IntTooLargeError : public KnpcError {
   public:
     IntTooLargeError();
     virtual void printTo(std::ostream &);
 };
-class CommentNotClosedError : public MindError {
+class CommentNotClosedError : public KnpcError {
   public:
     CommentNotClosedError();
     virtual void printTo(std::ostream &);
 };
 
 // 1: Syntax Error
-class SyntaxError : public MindError {
+class SyntaxError : public KnpcError {
   private:
     std::string msg;
 
@@ -71,7 +71,7 @@ class SyntaxError : public MindError {
 };
 
 // 2: Bad Argument Count Error
-class BadArgCountError : public MindError {
+class BadArgCountError : public KnpcError {
   public:
     BadArgCountError(symb::Function *);
     virtual void printTo(std::ostream &);
@@ -82,14 +82,14 @@ class BadArgCountError : public MindError {
 };
 
 // 3: Bad Print Statement Error
-class BadPrintStmtError : public MindError {
+class BadPrintStmtError : public KnpcError {
   public:
     BadPrintStmtError();
     virtual void printTo(std::ostream &);
 };
 
 // 4: Bad Message Receiver Error
-class BadReceiverError : public MindError {
+class BadReceiverError : public KnpcError {
   public:
     BadReceiverError(std::string);
     virtual void printTo(std::ostream &);
@@ -99,7 +99,7 @@ class BadReceiverError : public MindError {
 };
 
 // 5: Bad Varible Owner Error
-class BadOwnerError : public MindError {
+class BadOwnerError : public KnpcError {
   public:
     BadOwnerError(std::string);
     virtual void printTo(std::ostream &);
@@ -109,7 +109,7 @@ class BadOwnerError : public MindError {
 };
 
 // 8: Symbol is Not Method Error
-class NotMethodError : public MindError {
+class NotMethodError : public KnpcError {
   public:
     NotMethodError(symb::Symbol *);
     virtual void printTo(std::ostream &);
@@ -120,7 +120,7 @@ class NotMethodError : public MindError {
 };
 
 // 9: Symbol is Not Variable Error
-class NotVariableError : public MindError {
+class NotVariableError : public KnpcError {
   public:
     NotVariableError(symb::Symbol *);
     virtual void printTo(std::ostream &);
@@ -131,7 +131,7 @@ class NotVariableError : public MindError {
 };
 
 // 10: Symbol Not Found Error
-class SymbolNotFoundError : public MindError {
+class SymbolNotFoundError : public KnpcError {
   public:
     SymbolNotFoundError(std::string);
     virtual void printTo(std::ostream &);
@@ -142,7 +142,7 @@ class SymbolNotFoundError : public MindError {
 };
 
 // 13: Declaration Conflict Error
-class DeclConflictError : public MindError {
+class DeclConflictError : public KnpcError {
   public:
     DeclConflictError(std::string, symb::Symbol *);
     virtual void printTo(std::ostream &);
@@ -153,14 +153,14 @@ class DeclConflictError : public MindError {
 };
 
 // 17: Not Array Error
-class NotArrayError : public MindError {
+class NotArrayError : public KnpcError {
   public:
     NotArrayError();
     virtual void printTo(std::ostream &);
 };
 
 // 18: Unexpected Type Error
-class UnexpectedTypeError : public MindError {
+class UnexpectedTypeError : public KnpcError {
   public:
     UnexpectedTypeError(type::Type *, type::Type *);
     virtual void printTo(std::ostream &);
@@ -171,7 +171,7 @@ class UnexpectedTypeError : public MindError {
 };
 
 // 19: Incompatible Type Error
-class IncompatibleError : public MindError {
+class IncompatibleError : public KnpcError {
   public:
     IncompatibleError(type::Type *, type::Type *);
     virtual void printTo(std::ostream &);
@@ -182,7 +182,7 @@ class IncompatibleError : public MindError {
 };
 
 // 20: Bad == operator Error
-class BadEqualError : public MindError {
+class BadEqualError : public KnpcError {
   public:
     BadEqualError(type::Type *, type::Type *);
     virtual void printTo(std::ostream &);
@@ -193,13 +193,13 @@ class BadEqualError : public MindError {
 };
 
 // 21: Bad Testing Expression Error
-class BadTestExprError : public MindError {
+class BadTestExprError : public KnpcError {
   public:
     BadTestExprError();
     virtual void printTo(std::ostream &);
 };
 
-class ZeroLengthedArrayError : public MindError {
+class ZeroLengthedArrayError : public KnpcError {
   public:
     ZeroLengthedArrayError();
     virtual void printTo(std::ostream &);

@@ -27,7 +27,7 @@ static ErrorBuffer ebuff(std::cerr);
  *   loc   - the location of the error
  *   err   - the error object to be issued
  */
-void knpc::err::issue(Location *loc, MindError *err) {
+void knpc::err::issue(Location *loc, KnpcError *err) {
     std::ostringstream oss;
 
     oss << "*** Error at " << loc << ": ";
@@ -55,7 +55,7 @@ void knpc::err::debug(const char *msg, ...) {
     using namespace std;
     va_list ap;
 
-    fprintf(stderr, " * Mind Debug >>> ");
+    fprintf(stderr, " * Knpc Debug >>> ");
     va_start(ap, msg);
     vfprintf(stderr, msg, ap);
     va_end(ap);

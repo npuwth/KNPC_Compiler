@@ -6,15 +6,15 @@
  *  Keltin Leung 
  */
 
-#ifndef __MIND_STACK__
-#define __MIND_STACK__
+#ifndef __KNPC_STACK__
+#define __KNPC_STACK__
 
 #include "boehmgc.hpp"
 
 #include <vector>
 #include <stack>
 
-namespace mind {
+namespace knpc {
 
   namespace util {
 
@@ -36,4 +36,4 @@ namespace mind {
   }  
 }
 
-#endif // __MIND_STACK__
+#endif // __KNPC_STACK__

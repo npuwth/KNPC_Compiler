@@ -6,14 +6,14 @@
  *  Keltin Leung 
  */
 
-#ifndef __MIND_MAP__
-#define __MIND_MAP__
+#ifndef __KNPC_MAP__
+#define __KNPC_MAP__
 
 #include "boehmgc.hpp"
 
 #include <map>
 
-namespace mind {
+namespace knpc {
 
   namespace util {
 
@@ -27,4 +27,4 @@ namespace mind {
   }  
 }
 
-#endif // __MIND_MAP__
+#endif // __KNPC_MAP__
