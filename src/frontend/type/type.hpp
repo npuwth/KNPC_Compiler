@@ -5,22 +5,27 @@
  *    1. BaseType:  Int, Float, Error
  *    2. ArrayType: representing the types of arrays
  *    3. FuncType:  representing the types of functions
+ *
  */
 
-#pragma once
+#ifndef __KNPC_TYPE__
+#define __KNPC_TYPE__
 
 #include "3rdparty/list.hpp"
 #include "define.hpp"
 
 #include <iostream>
 
-namespcae knpc {
+namespace knpc {
+
+#define KNPC_TYPE_DEFINED
 namespace type {
 
 /* Semantic Types.
  *
  * These classes represent the semantic types of the symbols.
- * 
+ * NOTE:
+ *   don't get confused with the XXXType AST nodes
  */
 class Type {
   public:
@@ -143,6 +148,7 @@ class FuncType : public Type {
     // Prints this type object
     virtual void dump(std::ostream &);
 };
-
 } // namespace type
 } // namespace knpc
+
+#endif // __KNPC_TYPE__
