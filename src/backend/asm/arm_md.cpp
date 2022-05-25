@@ -162,7 +162,7 @@ ArmInstr *ArmDesc::prepareSingleChain(BasicBlock *b, FlowGraph *g) {
     case BasicBlock::BY_JUMP:
         spillDirtyRegs(b->LiveOut);
         addInstr(ArmInstr::J, NULL, NULL, NULL, 0,
-                 std::string(g->getBlock(b->next[0])->entry_label), NULL);
+                 std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
         // "B" for "branch"
         break;
 
@@ -171,25 +171,25 @@ ArmInstr *ArmDesc::prepareSingleChain(BasicBlock *b, FlowGraph *g) {
         spillDirtyRegs(b->LiveOut);
         // uses "branch if equal to zero" instruction
         addInstr(ArmInstr::TEQZ, _reg[r0], NULL, NULL, 0,
-                 std::string(g->getBlock(b->next[0])->entry_label), NULL);
+                 std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
         addInstr(ArmInstr::BEQ, NULL, NULL, NULL, 0,
-                 std::string(g->getBlock(b->next[0])->entry_label), NULL);
+                 std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
         addInstr(ArmInstr::J, NULL, NULL, NULL, 0,
-                 std::string(g->getBlock(b->next[1])->entry_label), NULL);
+                 std::string(g->getBlock(b->next[1])->entry_label), EMPTY_STR);
         break;
 
     case BasicBlock::BY_RETURN:
         r0 = getRegForRead(b->var, 0, b->LiveOut);
         spillDirtyRegs(b->LiveOut); // just to deattach all temporary variables
         addInstr(ArmInstr::MV, _reg[ArmReg::A1], _reg[r0], NULL, 0,
-                 EMPTY_STR, NULL);
+                 EMPTY_STR, EMPTY_STR);
         addInstr(ArmInstr::MV, _reg[ArmReg::SP], _reg[ArmReg::FP], NULL,
-                 0, EMPTY_STR, NULL);
+                 0, EMPTY_STR, EMPTY_STR);
         addInstr(ArmInstr::LW, _reg[ArmReg::LR], _reg[ArmReg::FP], NULL,
-                 -4, EMPTY_STR, NULL);
+                 -4, EMPTY_STR, EMPTY_STR);
         addInstr(ArmInstr::LW, _reg[ArmReg::FP], _reg[ArmReg::FP], NULL,
-                 -8, EMPTY_STR, NULL);
-        addInstr(ArmInstr::RET, NULL, NULL, NULL, 0, EMPTY_STR, NULL);
+                 -8, EMPTY_STR, EMPTY_STR);
+        addInstr(ArmInstr::RET, NULL, NULL, NULL, 0, EMPTY_STR, EMPTY_STR);
         break;
 
     default:
@@ -209,7 +209,7 @@ ArmInstr *ArmDesc::prepareSingleChain(BasicBlock *b, FlowGraph *g) {
 void ArmDesc::emitTac(Tac *t) {
     std::ostringstream oss;
     t->dump(oss);
-    addInstr(ArmInstr::COMMENT, NULL, NULL, NULL, 0, EMPTY_STR, oss.str().c_str() + 4);
+    addInstr(ArmInstr::COMMENT, NULL, NULL, NULL, 0, EMPTY_STR, oss.str());
     switch (t->op_code) {
     case Tac::LOAD_IMM4:
         emitLoadImm4Tac(t);
@@ -293,7 +293,7 @@ void ArmDesc::emitTac(Tac *t) {
         //knpc_assert(false);
 
     case Tac::POP:
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, 4, EMPTY_STR, NULL);
+        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, 4, EMPTY_STR, EMPTY_STR);
         break;
 
     case Tac::CALL: 
@@ -341,55 +341,55 @@ void ArmDesc::emitCallTac(Tac *t) {
         for(auto temp : *liveness){
             cnt -= 4;
             int r1 = getRegForRead(temp, 0, t->LiveOut);
-            addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, NULL);
+            addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
         }
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, NULL);
+        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
     }
 
     int count = 0;
     for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) count += 4;
 
     if(count > 0){
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -count, EMPTY_STR, NULL);
+        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -count, EMPTY_STR, EMPTY_STR);
         int cnt = count;
         for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev){
             cnt -= 4;
             int r1 = getRegForRead(it->op0.var, 0, it->LiveOut);
-            addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, NULL);
+            addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
         }
     }
     count += liveness->size() * 4;
 
-    addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, std::string("_") + t->op1.label->str_form, NULL);
+    addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, std::string("_") + t->op1.label->str_form, EMPTY_STR);
     
     //printf("%d\n", r0);
     {
         int cnt = 0;
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, count, EMPTY_STR, NULL);
+        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, count, EMPTY_STR, EMPTY_STR);
         for(auto temp: *liveness){
             cnt -= 4;
             int r1 = getRegForWrite(temp, 0, 0, t->LiveOut);
-            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, NULL);
+            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
         }
     }
     
     int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
-    addInstr(ArmInstr::MV, _reg[r0], _reg[ArmReg::A1], NULL, 0, EMPTY_STR, NULL);
+    addInstr(ArmInstr::MV, _reg[r0], _reg[ArmReg::A1], NULL, 0, EMPTY_STR, EMPTY_STR);
 }
 
 
 void ArmDesc::emitPushTac(Tac *t) {
     int r1 = getRegForRead(t->op0.var, 0, t->LiveOut);
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -4, EMPTY_STR, NULL);
-    addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, 0, EMPTY_STR, NULL);
+    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -4, EMPTY_STR, EMPTY_STR);
+    addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, 0, EMPTY_STR, EMPTY_STR);
 }
 
 void ArmDesc::emitAllocTac(Tac *t) {
     if (!t->LiveOut->contains(t->op0.var))
         return;
     int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -t->op1.size, EMPTY_STR, NULL);
-    addInstr(ArmInstr::MV, _reg[r0], _reg[ArmReg::SP], NULL, 0, EMPTY_STR, NULL);
+    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -t->op1.size, EMPTY_STR, EMPTY_STR);
+    addInstr(ArmInstr::MV, _reg[r0], _reg[ArmReg::SP], NULL, 0, EMPTY_STR, EMPTY_STR);
 }
 
 /*void ArmDesc::emitPopTac(Tac *t) {
@@ -411,7 +411,7 @@ void ArmDesc::emitLoadImm4Tac(Tac *t) {
     // uses "load immediate number" instruction
     int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
     addInstr(ArmInstr::LI, _reg[r0], NULL, NULL, t->op1.ival, EMPTY_STR,
-             NULL);
+             EMPTY_STR);
 }
 
 void ArmDesc::emitLoadSymbolTac(Tac *t) {
@@ -421,7 +421,7 @@ void ArmDesc::emitLoadSymbolTac(Tac *t) {
     // uses "load immediate number" instruction
     int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
     addInstr(ArmInstr::LA, _reg[r0], NULL, NULL, 0, t->op1.name,
-             NULL);
+             EMPTY_STR);
 }
 
 void ArmDesc::emitLoadTac(Tac *t) {
@@ -432,7 +432,7 @@ void ArmDesc::emitLoadTac(Tac *t) {
     int r1 = getRegForRead(t->op1.var, 0, t->LiveOut);
     int r0 = getRegForWrite(t->op0.var, r1, 0, t->LiveOut);
     addInstr(ArmInstr::LW, _reg[r0], _reg[r1], NULL, t->op1.offset, EMPTY_STR,
-             NULL);
+             EMPTY_STR);
 }
 
 void ArmDesc::emitStoreTac(Tac *t) {
@@ -440,7 +440,7 @@ void ArmDesc::emitStoreTac(Tac *t) {
     int r0 = getRegForRead(t->op0.var, 0, t->LiveOut);
     int r1 = getRegForRead(t->op1.var, r0, t->LiveOut);
     addInstr(ArmInstr::SW, _reg[r0], _reg[r1], NULL, t->op1.offset, EMPTY_STR,
-             NULL);
+             EMPTY_STR);
 }
 /* Translates a Unary TAC into Arm instructions.
  *
@@ -455,7 +455,7 @@ void ArmDesc::emitUnaryTac(ArmInstr::OpCode op, Tac *t) {
     int r1 = getRegForRead(t->op1.var, 0, t->LiveOut);
     int r0 = getRegForWrite(t->op0.var, r1, 0, t->LiveOut);
 
-    addInstr(op, _reg[r0], _reg[r1], NULL, 0, EMPTY_STR, NULL);
+    addInstr(op, _reg[r0], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
 }
 
 /* Translates a Binary TAC into Arm instructions.
@@ -475,7 +475,7 @@ void ArmDesc::emitBinaryTac(ArmInstr::OpCode op, Tac *t) {
     int r2 = getRegForRead(t->op2.var, r1, liveness);
     int r0 = getRegForWrite(t->op0.var, r1, r2, liveness);
 
-    addInstr(op, _reg[r0], _reg[r1], _reg[r2], 0, EMPTY_STR, NULL);
+    addInstr(op, _reg[r0], _reg[r1], _reg[r2], 0, EMPTY_STR, EMPTY_STR);
 }
 
 /* Outputs a single instruction line.
@@ -600,10 +600,10 @@ void ArmDesc::emitInstr(ArmInstr *i) {
     oss << std::left << std::setw(6);
     switch (i->op_code) {
     case ArmInstr::COMMENT:
-        emit(EMPTY_STR, NULL, i->comment);
+        emit(EMPTY_STR, NULL, i->comment.c_str());
         return;
     
-   case ArmInstr::LI:
+    case ArmInstr::LI:
         oss << "ldr" << i->r0->name << ", =" << i->i;
         break;
 
@@ -747,7 +747,7 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         knpc_assert(false); // other instructions not supported
     }
 
-    emit(EMPTY_STR, oss.str().c_str(), i->comment);
+    emit(EMPTY_STR, oss.str().c_str(), i->comment.c_str());
 }
 
 /* Outputs a "trace" (see also: ArmDesc::emitFuncty).
@@ -798,7 +798,7 @@ void ArmDesc::emitTrace(BasicBlock *b, FlowGraph *g) {
  *   cmt     - comment of this line
  */
 void ArmDesc::addInstr(ArmInstr::OpCode op_code, ArmReg *r0, ArmReg *r1,
-                         ArmReg *r2, int i, std::string l, const char *cmt) {
+                         ArmReg *r2, int i, std::string l, std::string cmt) {
     knpc_assert(NULL != _tail);
 
     // we should eliminate all the comments when doing optimization
@@ -861,12 +861,12 @@ int ArmDesc::getRegForRead(Temp v, int avoid1, LiveSet *live) {
                 << (v->offset < 0 ? "" : "+") << v->offset << ") into "
                 << _reg[i]->name;
             addInstr(ArmInstr::LW, _reg[i], base, NULL, v->offset, EMPTY_STR,
-                     oss.str().c_str());
+                     oss.str());
 
         } else {
             oss << "initialize " << v << " with 0";
             addInstr(ArmInstr::LI, _reg[i], NULL, 0, 0,
-                     EMPTY_STR, oss.str().c_str());
+                     EMPTY_STR, oss.str());
         }
         _reg[i]->dirty = false;
     }
@@ -929,7 +929,7 @@ void ArmDesc::spillReg(int i, LiveSet *live) {
         oss << "spill " << v << " from " << _reg[i]->name << " to ("
             << base->name << (v->offset < 0 ? "" : "+") << v->offset << ")";
         addInstr(ArmInstr::SW, _reg[i], base, NULL, v->offset, EMPTY_STR,
-                 oss.str().c_str());
+                 oss.str());
     }
 
     _reg[i]->var = NULL;
@@ -955,7 +955,7 @@ void ArmDesc::spillDirtyRegs(LiveSet *live) {
 
     if (i < ArmReg::TOTAL_NUM) {
         addInstr(ArmInstr::COMMENT, NULL, NULL, NULL, 0, EMPTY_STR,
-                 "(save modified registers before control flow changes)");
+                 std::string("(save modified registers before control flow changes)"));
 
         for (; i < ArmReg::TOTAL_NUM; ++i)
             spillReg(i, live);
