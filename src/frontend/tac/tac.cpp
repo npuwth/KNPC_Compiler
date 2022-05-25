@@ -192,7 +192,7 @@ Tac *Tac::Mod(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   an Equ tac
  * NOTE:
- *   if you want "string" support in Mind, you should add
+ *   if you want "string" support in Knpc, you should add
  *   a new runtime library function for comparision.
  */
 Tac *Tac::Equ(Temp dest, Temp op1, Temp op2)
