@@ -72,7 +72,7 @@ OffsetCounter *TransHelper::getOffsetCounter(void) {
  *   we use the variable index to avoid name crash.
  */
 Temp TransHelper::getNewTempI4(void) {
-    Temp v = new TempObject();
+    Temp v = new TempVariable();
     v->id = var_count++;
     v->size = 4;
     v->offset = 0;
