@@ -93,17 +93,6 @@ util::Vector<int> SemPass1::get_array_dims(SysYParser::ExpLiContext *ctx) {
     return ret;
 }
 
-// util::List<Type *> SemPass1::get_func_paramtypes(SysYParser::FuncFParamsContext *ctx) {
-//     util::List<Type *> ret;
-//     std::vector<SysYParser::FuncFParamContext *> paramTypes = ctx->funcFParam();
-//     for(auto i : paramTypes) {
-//         Type *cur = i->accept(this);
-//         if(cur == NULL) throw new BadArgCountError(NULL);// TODO:
-//         ret.append(cur);
-//     }
-//     return ret;
-// }
-
 // visit program node
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
     GlobalScope *gscope = new GlobalScope(); // gscope for use
@@ -276,7 +265,10 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitBlock(SysYParser::BlockContext *ctx) {
-    ctx->blockItemLi()->accept(this);//TODO: add local scope here
+    Scope *blockScope = new LocalScope();
+    scopes->open(blockScope);
+    ctx->blockItemLi()->accept(this); // add local scope here
+    scopes->close();
     return nullptr;
 }
 
@@ -314,28 +306,34 @@ antlrcpp::Any SemPass1::visitBlockStmt (SysYParser::BlockStmtContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitBreakStmt (SysYParser::BreakStmtContext *ctx) {
-    // break here, but nothing to do in symbtable
+    // "break" here, but nothing to do in symbtable
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitWhileStmt (SysYParser::WhileStmtContext *ctx) {
+    ctx->cond()->accept(this);
+    ctx->stmt()->accept(this);
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitReturnStmt (SysYParser::ReturnStmtContext *ctx) {
+    ctx->exp()->accept(this);
     return nullptr;
 }   
 
 antlrcpp::Any SemPass1::visitContinueStmt (SysYParser::ContinueStmtContext *ctx) {
+    // "continue" here, but nothing to do in symbtable
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
+    ctx->lVal()->accept(this);
+    ctx->exp()->accept(this);
     return nullptr;
 }
 
 
-
+// root function, called by main
 void buildSymbols(SysYParser::ProgramContext *tree) {
     tree->accept(new SemPass1());
 }
