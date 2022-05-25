@@ -28,6 +28,7 @@ class SemPass1 : public SysYBaseVisitor {
     // visit program
     virtual antlrcpp::Any visitProgram(SysYParser::ProgramContext *ctx) override;
     virtual antlrcpp::Any visitCompUnit(SysYParser::CompUnitContext *ctx) override;
+
     // visit variable declarations
     virtual antlrcpp::Any visitDecl(SysYParser::DeclContext *ctx) override;
     virtual antlrcpp::Any visitConstDecl(SysYParser::ConstDeclContext *ctx) override;
@@ -37,13 +38,32 @@ class SemPass1 : public SysYBaseVisitor {
     virtual antlrcpp::Any visitConstDef(SysYParser::ConstDefContext *ctx) override;
     virtual antlrcpp::Any visitVarDef(SysYParser::VarDefContext *ctx) override;    
     util::Vector<int> get_array_dims(SysYParser::ConstExpLiContext *ctx);
+    util::Vector<int> get_array_dims(SysYParser::ExpLiContext *ctx);
+
+    // visit expression
     virtual antlrcpp::Any visitConstExp(SysYParser::ConstExpContext *ctx) override;
+    virtual antlrcpp::Any visitExp(SysYParser::ExpContext *ctx) override;
 
     // visit function declarations
     virtual antlrcpp::Any visitFuncDef(SysYParser::FuncDefContext *ctx) override;
     virtual antlrcpp::Any visitFuncType(SysYParser::FuncTypeContext *ctx) override;
-    util::List<Type *> get_func_paramtypes(SysYParser::FuncFParamsContext *ctx);
+    // util::List<Type *> get_func_paramtypes(SysYParser::FuncFParamsContext *ctx);
+    virtual antlrcpp::Any visitFuncFParams(SysYParser::FuncFParamsContext *ctx) override;
     virtual antlrcpp::Any visitFuncFParam(SysYParser::FuncFParamContext *ctx) override;
+    virtual antlrcpp::Any visitBlock(SysYParser::BlockContext *ctx) override;
+    virtual antlrcpp::Any visitBlockItemLi(SysYParser::BlockItemLiContext *ctx) override;
+    virtual antlrcpp::Any visitBlockItem(SysYParser::BlockItemContext *ctx) override;
+
+    // visit statements
+    // virtual antlrcpp::Any visitStmt(SysYParser::StmtContext *ctx) override;
+    virtual antlrcpp::Any visitIfStmt (SysYParser::IfStmtContext *ctx) override;
+    virtual antlrcpp::Any visitExpStmt (SysYParser::ExpStmtContext *ctx) override;
+    virtual antlrcpp::Any visitBlockStmt (SysYParser::BlockStmtContext *ctx) override;
+    virtual antlrcpp::Any visitBreakStmt (SysYParser::BreakStmtContext *ctx) override;
+    virtual antlrcpp::Any visitWhileStmt (SysYParser::WhileStmtContext *ctx) override;
+    virtual antlrcpp::Any visitReturnStmt (SysYParser::ReturnStmtContext *ctx) override;    
+    virtual antlrcpp::Any visitContinueStmt (SysYParser::ContinueStmtContext *ctx) override;
+    virtual antlrcpp::Any visitAssignment (SysYParser::AssignmentContext *ctx) override;
 
     // visit types
     virtual antlrcpp::Any visitBType(SysYParser::BTypeContext *ctx) override;
@@ -62,16 +82,27 @@ util::Vector<int> SemPass1::get_array_dims(SysYParser::ConstExpLiContext *ctx) {
     return ret;
 }
 
-util::List<Type *> SemPass1::get_func_paramtypes(SysYParser::FuncFParamsContext *ctx) {
-    util::List<Type *> ret;
-    std::vector<SysYParser::FuncFParamContext *> paramTypes = ctx->funcFParam();
-    for(auto i : paramTypes) {
-        Type *cur = i->accept(this);
-        if(cur == NULL) throw new BadArgCountError(NULL);// TODO:
-        ret.append(cur);
+util::Vector<int> SemPass1::get_array_dims(SysYParser::ExpLiContext *ctx) {
+    util::Vector<int> ret;
+    std::vector<SysYParser::ExpContext *> dims = ctx->exp();
+    for(auto i : dims) {
+        int cur = i->accept(this); //TODO:
+        if( i < 0) throw ZeroLengthedArrayError();
+        ret.push_back(cur);
     }
     return ret;
 }
+
+// util::List<Type *> SemPass1::get_func_paramtypes(SysYParser::FuncFParamsContext *ctx) {
+//     util::List<Type *> ret;
+//     std::vector<SysYParser::FuncFParamContext *> paramTypes = ctx->funcFParam();
+//     for(auto i : paramTypes) {
+//         Type *cur = i->accept(this);
+//         if(cur == NULL) throw new BadArgCountError(NULL);// TODO:
+//         ret.append(cur);
+//     }
+//     return ret;
+// }
 
 // visit program node
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
@@ -182,13 +213,17 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
 antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     ctx->funcType()->accept(this);
     std::string name = ctx->Identifier()->getText();
-    util::List<Type *> paramTypes = get_func_paramtypes(ctx->funcFParams());
-    FuncType *funcType = new FuncType(t);
-    for(auto i : paramTypes) {
-        funcType->appendParameter(i);
-    }
     Function *sym = new Function(name, t, NULL);
-
+    Symbol *s = scopes->lookup(name, 0);
+    if(s != NULL) {
+        throw new DeclConflictError(name, sym);
+    }
+    scopes->declare(sym);
+    scopes->open(sym->getAssociatedScope());
+    // util::List<Type *> paramTypes = get_func_paramtypes(ctx->funcFParams());
+    ctx->funcFParams()->accept(this); // formal params
+    ctx->block()->accept(this);
+    scopes->close();
 }
 
 antlrcpp::Any SemPass1::visitFuncType(SysYParser::FuncTypeContext *ctx) {
@@ -203,11 +238,104 @@ antlrcpp::Any SemPass1::visitFuncType(SysYParser::FuncTypeContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitConstExp(SysYParser::ConstExpContext *ctx) {
+//TODO:
+    return nullptr;
+}
 
+antlrcpp::Any SemPass1::visitExp(SysYParser::ExpContext *ctx) {
+//TODO:
+    return nullptr;
+}
+
+
+antlrcpp::Any SemPass1::visitFuncFParams(SysYParser::FuncFParamsContext *ctx) {
+    for(auto it = ctx->funcFParam().begin();
+    it != ctx->funcFParam().end(); ++it) {
+        (*it)->accept(this);
+    }
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
-
+    ctx->bType()->accept(this);
+    std::string name = ctx->Identifier()->getText();
+    util::Vector<int> dims = get_array_dims(ctx->expLi());
+    Variable *sym;
+    if(dims.size() == 0) {
+        sym = new Variable(name, t, NULL);
+    } else {
+        Type *arrayType = new ArrayType(t, dims);
+        sym = new Variable(name, arrayType, NULL);
+    }
+    Symbol *s = scopes->lookup(name, 0);
+    if(s != NULL) {
+        throw new DeclConflictError(name, sym);
+    }
+    scopes->declare(sym);
     return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitBlock(SysYParser::BlockContext *ctx) {
+    ctx->blockItemLi()->accept(this);//TODO: add local scope here
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitBlockItemLi(SysYParser::BlockItemLiContext *ctx) {
+    for(auto it = ctx->blockItem().begin();
+    it != ctx->blockItem().end(); ++it) {
+        (*it)->accept(this);
+    }
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitBlockItem(SysYParser::BlockItemContext *ctx) {
+    ctx->decl()->accept(this);
+    ctx->stmt()->accept(this);
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitIfStmt (SysYParser::IfStmtContext *ctx) {
+    ctx->cond()->accept(this);
+    for(auto it = ctx->stmt().begin();
+    it != ctx->stmt().end(); ++it) {
+        (*it)->accept(this);
+    }
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitExpStmt (SysYParser::ExpStmtContext *ctx) {
+    ctx->exp()->accept(this);
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitBlockStmt (SysYParser::BlockStmtContext *ctx) {
+    ctx->block()->accept(this);
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitBreakStmt (SysYParser::BreakStmtContext *ctx) {
+    // break here, but nothing to do in symbtable
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitWhileStmt (SysYParser::WhileStmtContext *ctx) {
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitReturnStmt (SysYParser::ReturnStmtContext *ctx) {
+    return nullptr;
+}   
+
+antlrcpp::Any SemPass1::visitContinueStmt (SysYParser::ContinueStmtContext *ctx) {
+    return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
+    return nullptr;
+}
+
+
+
+void buildSymbols(SysYParser::ProgramContext *tree) {
+    tree->accept(new SemPass1());
 }
