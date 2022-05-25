@@ -71,9 +71,11 @@ void BaseType::dump(std::ostream &os) { os << type_name; }
 // private instances of the intrinsic types
 BaseType BaseType::_int("Int");
 BaseType BaseType::_float("Float");
+BaseType BaseType::_void("Void");
 BaseType BaseType::_error("Error");
 
 // public interfaces (constant)
 BaseType *const BaseType::Int = &_int;
 BaseType *const BaseType::Float = &_float;
+BaseType *const BaseType::Void = &_void;
 BaseType *const BaseType::Error = &_error;

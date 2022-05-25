@@ -113,12 +113,10 @@ bool Scope::isFuncScope(void) { return (getKind() == FUNCTION); }
  *  RETURNS:
  *    the corresponding symbol if the name is defined; NULL otherwise
  */
-Symbol *Scope::lookup(std::string id, Location *loc) {
+Symbol *Scope::lookup(std::string id) {
     if (id.empty())
         return NULL;
     if (!_syms.count(id))
-        return NULL;
-    if (*loc < *_syms[id]->getDefLocation())
         return NULL;
     return _syms[id];
 }

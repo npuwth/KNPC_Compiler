@@ -8,6 +8,7 @@
 #include "type/type.hpp"
 
 using namespace knpc::type;
+using namespace knpc::util;
 
 /* Constructor.
  *
@@ -15,11 +16,11 @@ using namespace knpc::type;
  *   bt    - the base type (i.e. the element type)
  *   len   - the length or the array
  */
-ArrayType::ArrayType(Type *bt, int len) {
+ArrayType::ArrayType(Type *bt, util::Vector<int> _dims) {
     knpc_assert(NULL != bt && !bt->isFuncType() && !bt->equal(BaseType::Error));
 
     element_type = bt;
-    length = len;
+    dims = _dims;
 }
 
 /* Gets the element type.
@@ -29,7 +30,7 @@ ArrayType::ArrayType(Type *bt, int len) {
  */
 Type *ArrayType::getElementType(void) { return element_type; }
 
-int ArrayType::getLength(void) { return length; }
+Vector<int> ArrayType::getLength(void) { return dims; }
 
 /* Tests whether it is an ArrayType.
  *
@@ -40,7 +41,13 @@ bool ArrayType::isArrayType(void) { return true; }
 
 /* Get the size of this type
  */
-int ArrayType::getSize() { return element_type->getSize() * length; }
+int ArrayType::getSize() { 
+    int size = 1;
+    for(auto i : dims) {
+        size = size*i;
+    }
+    return element_type->getSize() * size; 
+}
 
 /* Tests whether this type is compatible with the given type.
  *

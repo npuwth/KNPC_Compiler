@@ -32,7 +32,7 @@ ScopeStack::ScopeStack() { _global = NULL; }
  *  RETURNS:
  *    the symbol if that name is defined; NULL other wise
  */
-Symbol *ScopeStack::lookup(std::string id, Location *loc, bool through) {
+Symbol *ScopeStack::lookup(std::string id, bool through) {
     Symbol *s = NULL;
 
     if (id.empty())
@@ -40,14 +40,14 @@ Symbol *ScopeStack::lookup(std::string id, Location *loc, bool through) {
 
     if (through) {
         for (stk_t::iterator it = _stack.begin(); it != _stack.end(); ++it) {
-            s = (*it)->lookup(id, loc);
+            s = (*it)->lookup(id);
             if (NULL != s)
                 return s;
         }
         return NULL;
 
     } else {
-        return _stack.top()->lookup(id, loc);
+        return _stack.top()->lookup(id);
     }
 }
 

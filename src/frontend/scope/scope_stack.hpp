@@ -36,7 +36,7 @@ class ScopeStack {
     // Constructor
     ScopeStack();
     // Looks up a name in the scope stack
-    symb::Symbol *lookup(std::string id, Location *loc, bool through = true);
+    symb::Symbol *lookup(std::string id, bool through = true);
     // Declares a symbol in the current scope
     void declare(symb::Symbol *s);
     // Opens a scope

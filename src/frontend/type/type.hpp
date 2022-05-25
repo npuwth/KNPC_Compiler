@@ -12,6 +12,7 @@
 #define __KNPC_TYPE__
 
 #include "3rdparty/list.hpp"
+#include "3rdparty/vector.hpp"
 #include "define.hpp"
 
 #include <iostream>
@@ -60,7 +61,7 @@ class BaseType : public Type {
     // name of the type
     const char *type_name;
     // private instances of the base types
-    static BaseType _int, _float, _error;
+    static BaseType _int, _float, _void, _error;
     // don't call the constructor explictly
     BaseType(const char *);
 
@@ -80,6 +81,8 @@ class BaseType : public Type {
     static BaseType *const Int;
     // the Float type instance (use BaseType::Float to refer)
     static BaseType *const Float;
+    // the Void type instance (use BaseType::Void to refer)
+    static BaseType *const Void;
     // the Error type instance (use BaseType::Error to refer)
     static BaseType *const Error;
 };
@@ -94,15 +97,16 @@ class ArrayType : public Type {
   private:
     // the element type
     Type *element_type;
-    int length;
+    // int length;
+    util::Vector<int> dims;
 
   public:
     // Constructor
-    ArrayType(Type *, int length);
+    ArrayType(Type *, util::Vector<int> dims);
     // Gets the element type (a.k.a. "the base type of an array")
     Type *getElementType(void);
     // Gets the array length
-    int getLength(void);
+    util::Vector<int> getLength(void);
     // Tests whether it is ArrayType
     virtual bool isArrayType(void);
     // Get the size of this type

@@ -74,7 +74,7 @@ class Scope {
     // Tests whether it is a function scope
     virtual bool isFuncScope(void);
     // Looks up a name in this scope
-    virtual symb::Symbol *lookup(std::string, Location *loc);
+    virtual symb::Symbol *lookup(std::string);
     // Declares a symbol in this scope
     virtual void declare(symb::Symbol *);
     // Cancels an already-declared symbol in this scope
