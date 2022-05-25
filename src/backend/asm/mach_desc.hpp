@@ -3,15 +3,15 @@
  *
  */
 
-#ifndef __MIND_MACHDESC__
-#define __MIND_MACHDESC__
+#ifndef __KNPC_MACHDESC__
+#define __KNPC_MACHDESC__
 
 #include "define.hpp"
 
 #include <iostream>
 
-namespace mind {
-#define MIND_MACHDESC_DEFINED
+namespace knpc {
+#define KNPC_MACHDESC_DEFINED
 namespace assembly {
 /**
  * Interface of ``instruction''.
@@ -39,6 +39,6 @@ class MachineDesc {
 };
 
 } // namespace assembly
-} // namespace mind
+} // namespace knpc
 
-#endif // __MIND_MACHDESC__
+#endif // __KNPC_MACHDESC__

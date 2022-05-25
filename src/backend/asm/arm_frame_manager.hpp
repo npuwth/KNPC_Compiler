@@ -10,7 +10,7 @@
 #include "3rdparty/set.hpp"
 #include "define.hpp"
 
-namespace mind {
+namespace knpc {
 namespace assembly {
 
 /**
@@ -51,6 +51,6 @@ class ArmStackFrameManager {
 };
 
 } // namespace assembly
-} // namespace mind
+} // namespace knpc
 
 #endif // __KNPC_ARMFM__

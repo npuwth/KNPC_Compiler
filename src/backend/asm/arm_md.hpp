@@ -11,7 +11,7 @@
 #include "asm/arm_frame_manager.hpp"
 #include "define.hpp"
 
-namespace mind {
+namespace knpc {
 #define ARM_COMPONENTS_DEFINED
 namespace assembly {
 // for convinience
@@ -206,6 +206,6 @@ class ArmDesc : public MachineDesc {
 };
 
 } // namespace assembly
-} // namespace mind
+} // namespace knpc
 
 #endif // __KNPC_ARMMD__

@@ -4,14 +4,14 @@
  */
 
 
-#ifndef __MIND_OFFSETCOUNTER__
-#define __MIND_OFFSETCOUNTER__
+#ifndef __KNPC_OFFSETCOUNTER__
+#define __KNPC_OFFSETCOUNTER__
 
 #include "define.hpp"
 
-namespace mind {
+namespace knpc {
 
-#define MIND_OFFSETCOUNTER_DEFINED
+#define KNPC_OFFSETCOUNTER_DEFINED
 namespace assembly {
 
 /** Offset counter.
@@ -50,6 +50,6 @@ class OffsetCounter {
 };
 
 } // namespace assembly
-} // namespace mind
+} // namespace knpc
 
-#endif // __MIND_OFFSETCOUNTER__
+#endif // __KNPC_OFFSETCOUNTER__

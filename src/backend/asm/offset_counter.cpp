@@ -8,7 +8,7 @@
 #include "asm/offset_counter.hpp"
 #include "config.hpp"
 
-using namespace mind::assembly;
+using namespace knpc::assembly;
 
 /* Constructor.
  *

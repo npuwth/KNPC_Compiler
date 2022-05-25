@@ -18,10 +18,10 @@
 #include <iomanip>
 #include <sstream>
 
-using namespace mind::assembly;
-using namespace mind::tac;
-using namespace mind::util;
-using namespace mind;
+using namespace knpc::assembly;
+using namespace knpc::tac;
+using namespace knpc::util;
+using namespace knpc;
 
 // declaration of empty string
 #define EMPTY_STR std::string()
@@ -120,7 +120,7 @@ void ArmDesc::emitPieces(scope::GlobalScope *gscope, Piece *ps,
             break;
 
         default:
-            mind_assert(false); // unreachable
+            knpc_assert(false); // unreachable
             break;
         }
 
@@ -134,7 +134,7 @@ void ArmDesc::emitPieces(scope::GlobalScope *gscope, Piece *ps,
  *   a new label guaranteed to be non-conflict with the existing ones
  */
 const char *ArmDesc::getNewLabel(void) {
-    mind_assert(_label_counter < 10000);
+    knpc_assert(_label_counter < 10000);
 
     char *buf = new char[10];
     std::sprintf(buf, "__LL%d", _label_counter++);
@@ -193,7 +193,7 @@ ArmInstr *ArmDesc::prepareSingleChain(BasicBlock *b, FlowGraph *g) {
         break;
 
     default:
-        mind_assert(false); // unreachable
+        knpc_assert(false); // unreachable
     }
     _tail = NULL;
     return leading.next;
@@ -290,7 +290,7 @@ void ArmDesc::emitTac(Tac *t) {
     case Tac::PUSH:
         emitPushTac(t);
         break;
-        //mind_assert(false);
+        //knpc_assert(false);
 
     case Tac::POP:
         addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, 4, EMPTY_STR, NULL);
@@ -327,7 +327,7 @@ void ArmDesc::emitTac(Tac *t) {
 
     default:
         printf("%d ????\n", t->op_code);
-        mind_assert(false); // should not appear inside a basic block
+        knpc_assert(false); // should not appear inside a basic block
     }
 }
 
@@ -510,7 +510,7 @@ void ArmDesc::emit(std::string label, const char *body, const char *comment) {
  *   f     - the Functy object
  */
 void ArmDesc::emitFuncty(Functy f) {
-    mind_assert(NULL != f);
+    knpc_assert(NULL != f);
 
     _frame = new ArmStackFrameManager(-3 * WORD_SIZE);
     FlowGraph *g = FlowGraph::makeGraph(f);
@@ -546,7 +546,7 @@ void ArmDesc::emitFuncty(Functy f) {
         // std::exit(0);
         return;
     }
-    mind_assert(!f->entry->str_form.empty()); // this assertion should hold for every Functy
+    knpc_assert(!f->entry->str_form.empty()); // this assertion should hold for every Functy
     // outputs the header of a function
     emitProlog(f->entry, _frame->getStackFrameSize());
     // chains up the assembly code of every basic block and output.
@@ -744,7 +744,7 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         break;
 
     default:
-        mind_assert(false); // other instructions not supported
+        knpc_assert(false); // other instructions not supported
     }
 
     emit(EMPTY_STR, oss.str().c_str(), i->comment);
@@ -782,7 +782,7 @@ void ArmDesc::emitTrace(BasicBlock *b, FlowGraph *g) {
         break;
 
     default:
-        mind_assert(false); // unreachable
+        knpc_assert(false); // unreachable
     }
 }
 
@@ -799,7 +799,7 @@ void ArmDesc::emitTrace(BasicBlock *b, FlowGraph *g) {
  */
 void ArmDesc::addInstr(ArmInstr::OpCode op_code, ArmReg *r0, ArmReg *r1,
                          ArmReg *r2, int i, std::string l, const char *cmt) {
-    mind_assert(NULL != _tail);
+    knpc_assert(NULL != _tail);
 
     // we should eliminate all the comments when doing optimization
     if (Option::doOptimize() && (ArmInstr::COMMENT == op_code))

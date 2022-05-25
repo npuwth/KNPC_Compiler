@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <cstring>
 
-using namespace mind::assembly;
-using namespace mind::tac;
-using namespace mind::util;
-using namespace mind;
+using namespace knpc::assembly;
+using namespace knpc::tac;
+using namespace knpc::util;
+using namespace knpc;
 
 #define WORD_SIZE 4
 #define UPDATE_MAX()                                                           \
@@ -71,7 +71,7 @@ void ArmStackFrameManager::reserve(Temp v) {
  *   the slot number if found, else -1 will be returned.
  */
 int ArmStackFrameManager::findSlotOf(Temp v) {
-    mind_assert(NULL != v && (WORD_SIZE == v->size));
+    knpc_assert(NULL != v && (WORD_SIZE == v->size));
 
     int i = -1;
 
@@ -92,7 +92,7 @@ int ArmStackFrameManager::findSlotOf(Temp v) {
  *   the variable can be safely saved.
  */
 int ArmStackFrameManager::getSlotToWrite(Temp v, Set<Temp> *liveness) {
-    mind_assert(NULL != v && NULL != liveness && !v->is_offset_fixed);
+    knpc_assert(NULL != v && NULL != liveness && !v->is_offset_fixed);
 
     int i = findSlotOf(v);
 
