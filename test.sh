@@ -4,7 +4,7 @@ make
 passed=0
 CE=0
 WA=0
-for source_file in $(find $TEST_PATH -name '*.c')
+for source_file in $(ls $(find $TEST_PATH -name '*.c'))
 do
 	$COMPILER ${source_file%.*}.c > ${source_file%.*}.s
 	if [ $? == 0 ];
