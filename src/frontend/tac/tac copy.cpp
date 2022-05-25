@@ -1,7 +1,7 @@
 /*****************************************************
  *  Operations of Tac's and data objects.
  *
- *  Keltin Leung
+ *  Keltin Leung 
  */
 
 #include "tac/tac.hpp"
@@ -12,11 +12,11 @@
 #include <iomanip>
 #include <sstream>
 
-using namespace knpc;
-using namespace knpc::tac;
+using namespace mind;
+using namespace mind::tac;
 
 // a syntatic sugar for safety check
-#define REQUIRE_I4(x) knpc_assert(4 == x->size);
+#define REQUIRE_I4(x) mind_assert(4 == x->size);
 
 /* Allocating a new Tac object.
  *
@@ -25,8 +25,7 @@ using namespace knpc::tac;
  * RETURNS:
  *   the newly allocated Tac object
  */
-static Tac *allocateNewTac(Tac::Kind code)
-{
+static Tac *allocateNewTac(Tac::Kind code) {
     Tac *t = new Tac;
     t->op_code = code;
     t->op0.ival = t->op1.ival = t->op2.ival = 0;
@@ -47,8 +46,7 @@ static Tac *allocateNewTac(Tac::Kind code)
  * RETURNS:
  *   a Memo tac
  */
-Tac *Tac::Memo(const char *memo)
-{
+Tac *Tac::Memo(const char *memo) {
     Tac *t = allocateNewTac(Tac::MEMO);
     t->op0.memo = memo;
 
@@ -66,8 +64,7 @@ Tac *Tac::Memo(const char *memo)
  * RETURNS:
  *   an Add tac
  */
-Tac *Tac::Add(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Add(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -91,8 +88,7 @@ Tac *Tac::Add(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Sub tac
  */
-Tac *Tac::Sub(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Sub(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -116,8 +112,7 @@ Tac *Tac::Sub(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Mul tac
  */
-Tac *Tac::Mul(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Mul(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -141,8 +136,7 @@ Tac *Tac::Mul(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Div tac
  */
-Tac *Tac::Div(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Div(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -166,8 +160,7 @@ Tac *Tac::Div(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Mod tac
  */
-Tac *Tac::Mod(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Mod(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -195,8 +188,7 @@ Tac *Tac::Mod(Temp dest, Temp op1, Temp op2)
  *   if you want "string" support in Mind, you should add
  *   a new runtime library function for comparision.
  */
-Tac *Tac::Equ(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Equ(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -221,8 +213,7 @@ Tac *Tac::Equ(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Neq tac
  */
-Tac *Tac::Neq(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Neq(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -246,8 +237,7 @@ Tac *Tac::Neq(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Les tac
  */
-Tac *Tac::Les(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Les(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -271,8 +261,7 @@ Tac *Tac::Les(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Leq tac
  */
-Tac *Tac::Leq(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Leq(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -296,8 +285,7 @@ Tac *Tac::Leq(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Gtr tac
  */
-Tac *Tac::Gtr(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Gtr(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -321,8 +309,7 @@ Tac *Tac::Gtr(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a Geq tac
  */
-Tac *Tac::Geq(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::Geq(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -346,8 +333,7 @@ Tac *Tac::Geq(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a LAnd tac
  */
-Tac *Tac::LAnd(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::LAnd(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -371,8 +357,7 @@ Tac *Tac::LAnd(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   a LOr tac
  */
-Tac *Tac::LOr(Temp dest, Temp op1, Temp op2)
-{
+Tac *Tac::LOr(Temp dest, Temp op1, Temp op2) {
     REQUIRE_I4(dest);
     REQUIRE_I4(op1);
     REQUIRE_I4(op2);
@@ -395,8 +380,7 @@ Tac *Tac::LOr(Temp dest, Temp op1, Temp op2)
  * RETURNS:
  *   an Assign tac
  */
-Tac *Tac::Assign(Temp dest, Temp src)
-{
+Tac *Tac::Assign(Temp dest, Temp src) {
     REQUIRE_I4(dest);
     REQUIRE_I4(src);
 
@@ -417,8 +401,7 @@ Tac *Tac::Assign(Temp dest, Temp src)
  * RETURNS:
  *   a Neg tac
  */
-Tac *Tac::Neg(Temp dest, Temp src)
-{
+Tac *Tac::Neg(Temp dest, Temp src) {
     REQUIRE_I4(dest);
     REQUIRE_I4(src);
 
@@ -439,8 +422,7 @@ Tac *Tac::Neg(Temp dest, Temp src)
  * RETURNS:
  *   a LNot tac
  */
-Tac *Tac::LNot(Temp dest, Temp src)
-{
+Tac *Tac::LNot(Temp dest, Temp src) {
     REQUIRE_I4(dest);
     REQUIRE_I4(src);
 
@@ -461,8 +443,7 @@ Tac *Tac::LNot(Temp dest, Temp src)
  * RETURNS:
  *   a BNot tac
  */
-Tac *Tac::BNot(Temp dest, Temp src)
-{
+Tac *Tac::BNot(Temp dest, Temp src) {
     REQUIRE_I4(dest);
     REQUIRE_I4(src);
 
@@ -483,8 +464,7 @@ Tac *Tac::BNot(Temp dest, Temp src)
  * RETURNS:
  *   a LoadImm4 tac
  */
-Tac *Tac::LoadImm4(Temp dest, int value)
-{
+Tac *Tac::LoadImm4(Temp dest, int value) {
     REQUIRE_I4(dest);
 
     Tac *t = allocateNewTac(Tac::LOAD_IMM4);
@@ -494,8 +474,7 @@ Tac *Tac::LoadImm4(Temp dest, int value)
     return t;
 }
 
-Tac *Tac::LoadSymbol(Temp dest, std::string label)
-{
+Tac *Tac::LoadSymbol(Temp dest, std::string label) {
     REQUIRE_I4(dest);
 
     Tac *t = allocateNewTac(Tac::LOAD_SYMBOL);
@@ -505,8 +484,7 @@ Tac *Tac::LoadSymbol(Temp dest, std::string label)
     return t;
 }
 
-Tac *Tac::Load(Temp dest, Temp src, int offset)
-{
+Tac *Tac::Load(Temp dest, Temp src, int offset) {
     REQUIRE_I4(dest);
     REQUIRE_I4(src);
 
@@ -517,8 +495,7 @@ Tac *Tac::Load(Temp dest, Temp src, int offset)
     return t;
 }
 
-Tac *Tac::Store(Temp src, Temp base, int offset)
-{
+Tac *Tac::Store(Temp src, Temp base, int offset) {
     REQUIRE_I4(src);
     REQUIRE_I4(base);
 
@@ -538,8 +515,7 @@ Tac *Tac::Store(Temp src, Temp base, int offset)
  * RETURNS:
  *   a Jump tac
  */
-Tac *Tac::Jump(Label dest)
-{
+Tac *Tac::Jump(Label dest) {
     Tac *t = allocateNewTac(Tac::JUMP);
     t->op0.label = dest;
     dest->target = true;
@@ -557,8 +533,7 @@ Tac *Tac::Jump(Label dest)
  * RETURNS:
  *   a JZero tac
  */
-Tac *Tac::JZero(Label dest, Temp cond)
-{
+Tac *Tac::JZero(Label dest, Temp cond) {
     REQUIRE_I4(cond);
 
     Tac *t = allocateNewTac(Tac::JZERO);
@@ -578,8 +553,7 @@ Tac *Tac::JZero(Label dest, Temp cond)
  * RETURNS:
  *   a Push tac
  */
-Tac *Tac::Push(Temp src)
-{
+Tac *Tac::Push(Temp src) {
     REQUIRE_I4(src);
 
     Tac *t = allocateNewTac(Tac::PUSH);
@@ -597,8 +571,7 @@ Tac *Tac::Push(Temp src)
  * RETURNS:
  *   a Pop tac
  */
-Tac *Tac::Pop(Temp dest)
-{ // dest may be NULL
+Tac *Tac::Pop(Temp dest) { // dest may be NULL
     REQUIRE_I4(dest);
 
     Tac *t = allocateNewTac(Tac::POP);
@@ -607,24 +580,22 @@ Tac *Tac::Pop(Temp dest)
     return t;
 }
 
-Tac *Tac::Param(Temp dest)
-{
+Tac *Tac::Param(Temp dest) {
     REQUIRE_I4(dest);
 
     Tac *t = allocateNewTac(Tac::PARAM);
     t->op0.var = dest;
-
+    
     return t;
 }
 
-Tac *Tac::Alloc(Temp dest, int num)
-{
+Tac *Tac::Alloc(Temp dest, int num) {
     REQUIRE_I4(dest);
 
     Tac *t = allocateNewTac(Tac::ALLOC);
     t->op0.var = dest;
     t->op1.size = num;
-
+    
     return t;
 }
 
@@ -638,8 +609,7 @@ Tac *Tac::Alloc(Temp dest, int num)
  *   a Return tac
  */
 
-Tac *Tac::Return(Temp value)
-{
+Tac *Tac::Return(Temp value) {
     REQUIRE_I4(value);
 
     Tac *t = allocateNewTac(Tac::RETURN);
@@ -648,8 +618,7 @@ Tac *Tac::Return(Temp value)
     return t;
 }
 
-Tac *Tac::Call(Temp dest, Label label)
-{
+Tac *Tac::Call(Temp dest, Label label) {
     REQUIRE_I4(dest);
 
     Tac *t = allocateNewTac(Tac::CALL);
@@ -667,8 +636,7 @@ Tac *Tac::Call(Temp dest, Label label)
  * RETURNS:
  *   a Mark tac
  */
-Tac *Tac::Mark(Label label)
-{
+Tac *Tac::Mark(Label label) {
     Tac *t = allocateNewTac(Tac::MARK);
     t->op0.label = label;
     label->where = t;
@@ -684,8 +652,7 @@ Tac *Tac::Mark(Label label)
  * RETURNS:
  *   the output stream
  */
-std::ostream &knpc::operator<<(std::ostream &os, Temp v)
-{
+std::ostream &mind::operator<<(std::ostream &os, Temp v) {
     return (os << "T" << v->id);
 }
 
@@ -697,8 +664,7 @@ std::ostream &knpc::operator<<(std::ostream &os, Temp v)
  * RETURNS:
  *   the output stream
  */
-std::ostream &knpc::operator<<(std::ostream &os, Label l)
-{
+std::ostream &mind::operator<<(std::ostream &os, Label l) {
     if (l->str_form.empty())
         return (os << "__L" << l->id);
     else
@@ -713,8 +679,7 @@ std::ostream &knpc::operator<<(std::ostream &os, Label l)
  * RETURNS:
  *   the output stream
  */
-std::ostream &knpc::operator<<(std::ostream &os, Functy f)
-{
+std::ostream &mind::operator<<(std::ostream &os, Functy f) {
     for (Tac *p = f->code; p != NULL; p = p->next)
         os << p;
     return os;
@@ -725,10 +690,8 @@ std::ostream &knpc::operator<<(std::ostream &os, Functy f)
  * PARAMETERS:
  *   os   - the output stream
  */
-void Tac::dump(std::ostream &os)
-{
-    switch (op_code)
-    {
+void Tac::dump(std::ostream &os) {
+    switch (op_code) {
     case MEMO:
         os << "    memo '" << op0.memo << "'";
         break;
@@ -844,11 +807,11 @@ void Tac::dump(std::ostream &os)
     case LOAD_IMM4:
         os << "    " << op0.var << " <- " << op1.ival;
         break;
-
+    
     case LOAD_SYMBOL:
         os << "    " << op0.var << " = LOAD_SYMBOL " << op1.name;
         break;
-
+    
     case LOAD:
         os << "    " << op0.var << " = LOAD " << op1.var << ", " << op1.offset;
         break;
@@ -864,13 +827,13 @@ void Tac::dump(std::ostream &os)
     case STORE:
         os << "    STORE " << op0.var << " -> " << op1.var << ", " << op1.offset;
         break;
-
+    
     case ALLOC:
         os << "    " << op0.var << " = ALLOC " << op1.size;
         break;
 
     default:
-        knpc_assert(false); // unreachable
+        mind_assert(false); // unreachable
         break;
     }
 }
@@ -880,10 +843,8 @@ void Tac::dump(std::ostream &os)
  * PARAMETERS:
  *   os   - the output stream
  */
-void Piece::dump(std::ostream &os)
-{
-    for (Piece *p = this; p != NULL; p = p->next)
-    {
+void Piece::dump(std::ostream &os) {
+    for (Piece *p = this; p != NULL; p = p->next) {
         if (FUNCTY == p->kind)
             os << p->as.functy << std::endl;
     }
@@ -897,8 +858,7 @@ void Piece::dump(std::ostream &os)
  * RETURNS:
  *   the output stream
  */
-std::ostream &knpc::operator<<(std::ostream &os, Tac *t)
-{
+std::ostream &mind::operator<<(std::ostream &os, Tac *t) {
     std::ostringstream oss;
     t->dump(oss);
     os << std::left << std::setw(32) << oss.str();

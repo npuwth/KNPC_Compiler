@@ -150,7 +150,7 @@ namespace tac{
         // 下一个块指针
         Piece *next;
 
-        // 导出正个块
+        // 导出整个块
         void dump(std::ostream &);
     };
 } // namespace tac
