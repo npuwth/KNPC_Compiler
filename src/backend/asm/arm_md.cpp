@@ -65,7 +65,7 @@ ArmDesc::ArmDesc(void) {
     _reg[ArmReg::V5] = new ArmReg("v5", true);
     _reg[ArmReg::V6] = new ArmReg("v6", true);
     _reg[ArmReg::V7] = new ArmReg("v7", true);
-    _reg[ArmReg::FP] = new ArmReg("fp", true);
+    _reg[ArmReg::FP] = new ArmReg("fp", false);
     _reg[ArmReg::IP] = new ArmReg("ip", false);
     _reg[ArmReg::SP] = new ArmReg("sp", false);
     _reg[ArmReg::LR] = new ArmReg("lr", false);
