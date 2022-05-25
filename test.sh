@@ -12,7 +12,7 @@ do
 		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static
 		qemu-arm ${source_file%.*}.tmp
 		result=$?
-		answer=$(cat ${source_file%.*}.out)
+		answer=$(cat ${source_file%.*}.ans)
 		if [ $result == $answer ];
 		then
 			printf "\e[32m%-20s testcase: %-30s (result: %-3d | answer: %3d).\e[0m\n" "[PASSED]" ${source_file%.*} $result $answer
