@@ -9,6 +9,7 @@ find_package(Java)
 include_directories(
     ${PROJECT_SOURCE_DIR}/third_party/
     ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/
+    ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/frontend/
     ${PROJECT_SOURCE_DIR}/src/backend/
     ${PROJECT_SOURCE_DIR}/src/optimization/
