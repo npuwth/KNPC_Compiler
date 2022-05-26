@@ -220,8 +220,8 @@ void ArmDesc::emitTac(Tac *t) {
         break;
 
     case Tac::LNOT:
-        emitUnaryTac(ArmInstr::TEQZ, t);
-        emitUnaryTac(ArmInstr::SEQ, t);
+        emitUnaryTac(ArmInstr::TEQZ, t); // 与0相等测试
+        emitUnaryTac(ArmInstr::SEQ, t);  // ?
         emitUnaryTac(ArmInstr::CNE, t);
         break;
     

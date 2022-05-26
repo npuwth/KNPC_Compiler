@@ -39,7 +39,7 @@ constDecl: Const bType constDefLi ';';
 
 bType: Int | Float;
 
-constDefLi: constDef (',' constDefLi)?;
+constDefLi: constDef (',' constDef)*;
 
 constDef: Identifier constExpLi? '=' constInitVal;
 

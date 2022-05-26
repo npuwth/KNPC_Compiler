@@ -160,8 +160,8 @@ public:
   public:
     ConstDefLiContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ConstDefContext *constDef();
-    ConstDefLiContext *constDefLi();
+    std::vector<ConstDefContext *> constDef();
+    ConstDefContext* constDef(size_t i);
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
