@@ -348,7 +348,7 @@ public:
     virtual size_t getRuleIndex() const override;
     BTypeContext *bType();
     antlr4::tree::TerminalNode *Identifier();
-    ExpLiContext *expLi();
+    ConstExpLiContext *constExpLi();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -550,14 +550,41 @@ public:
   class  PrimaryExpContext : public antlr4::ParserRuleContext {
   public:
     PrimaryExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    ExpContext *exp();
-    LValContext *lVal();
-    NumberContext *number();
+   
+    PrimaryExpContext() = default;
+    void copyFrom(PrimaryExpContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
 
+    virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  Primary2Context : public PrimaryExpContext {
+  public:
+    Primary2Context(PrimaryExpContext *ctx);
+
+    LValContext *lVal();
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+  };
+
+  class  Primary3Context : public PrimaryExpContext {
+  public:
+    Primary3Context(PrimaryExpContext *ctx);
+
+    NumberContext *number();
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Primary1Context : public PrimaryExpContext {
+  public:
+    Primary1Context(PrimaryExpContext *ctx);
+
+    ExpContext *exp();
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
   PrimaryExpContext* primaryExp();
@@ -638,8 +665,8 @@ public:
   public:
     FuncRParamsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExpContext *exp();
-    FuncRParamsContext *funcRParams();
+    std::vector<ExpContext *> exp();
+    ExpContext* exp(size_t i);
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
