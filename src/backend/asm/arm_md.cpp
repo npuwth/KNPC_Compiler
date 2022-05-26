@@ -497,7 +497,7 @@ void ArmDesc::emit(std::string label, const char *body, const char *comment) {
         else if (NULL != body)
             os << "          " << std::left << std::setw(30) << body;
 
-        if (NULL != comment)
+        if (NULL != comment && '\0' != *comment)
             os << "@ " << comment;
     }
 
