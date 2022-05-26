@@ -108,7 +108,7 @@ struct ArmInstr : public Instr {
     ArmReg *r0, *r1, *r2; // 3 register operands
     int i;                  // offset or immediate number
     std::string l;          // target label. for LA, B, BEQZ or JAL
-    const char *comment;    // comment in this line
+    std::string comment;    // comment in this line
 
     ArmInstr *next; // next instruction
 
@@ -180,7 +180,7 @@ class ArmDesc : public MachineDesc {
     void emitInstr(ArmInstr *);
     // appends a new instruction to "_tail"
     void addInstr(ArmInstr::OpCode, ArmReg *, ArmReg *, ArmReg *, int,
-                  std::string, const char *);
+                  std::string, std::string);
 
 
     /*** sketch for peephole optimizer (inside a basic block) ***/
