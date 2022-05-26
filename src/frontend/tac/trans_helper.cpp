@@ -400,7 +400,7 @@ Temp TransHelper::genLOr(Temp a, Temp b) {
     return c;
 }
 
-/* Appends a LNot tac node to the current list.
+/* Appends a LNot tac node to the current list.  logical not
  *
  * PARAMETERS:
  *   src  - operand
@@ -413,7 +413,7 @@ Temp TransHelper::genLNot(Temp src) {
     return c;
 }
 
-/* Appends a BNot tac node to the current list.
+/* Appends a BNot tac node to the current list.  bitwise not
  *
  * PARAMETERS:
  *   src  - operand
