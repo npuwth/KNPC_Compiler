@@ -24,13 +24,11 @@ using namespace knpc::tac;
  * PARAMETERS:
  *   n       - the function name
  *   resType - the result type
- *   l       - the definition location in the source code
  */
-Function::Function(std::string n, Type *resType, Location *l) {
+Function::Function(std::string n, Type *resType) {
     knpc_assert(NULL != resType);
 
     name = n;
-    loc = l;
     order = -1;
     mark = 0;
 
@@ -104,7 +102,7 @@ bool Function::isFunction(void) { return true; }
  *   os    - the output stream
  */
 void Function::dump(std::ostream &os) {
-    os << loc << " -> function " << (name) << " : " << type;
+    os << "function " << (name) << " : " << type;
 }
 
 /* Attaches the entry label to this function symbol.

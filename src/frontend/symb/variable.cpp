@@ -19,14 +19,12 @@ using namespace knpc::tac;
  * PARAMETERS:
  *   n     - the variable name
  *   t     - the type
- *   l     - the definition location in the source code
  */
-Variable::Variable(std::string n, Type *t, Location *l) {
+Variable::Variable(std::string n, Type *t) {
     knpc_assert(NULL != t);
 
     name = n;
     type = t;
-    loc = l;
     order = -1;
 
     is_parameter = false;
@@ -87,7 +85,7 @@ bool Variable::isVariable(void) { return true; }
  *   os    - the output stream
  */
 void Variable::dump(std::ostream &os) {
-    os << loc << " -> variable ";
+    os << "variable ";
     if (is_parameter)
         os << "@" << (name);
     else

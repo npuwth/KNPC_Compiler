@@ -1,3 +1,3 @@
 int main(){
-    while( 3 >= 4 ) 4;
+    return 3;
 }

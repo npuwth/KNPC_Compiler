@@ -296,7 +296,7 @@ DeclConflictError::DeclConflictError(std::string n, Symbol *s) {
     knpc_assert(NULL != s);
 
     name = n;
-    loc = s->getDefLocation();
+    // loc = s->getDefLocation();
 }
 
 // "declaration of 'x' conflicts with that at (4, 2)"

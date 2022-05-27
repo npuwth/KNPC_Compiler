@@ -101,9 +101,9 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
     if(ctx->constExpLi()) {
         util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         Type *arrayType = new ArrayType(p_type, dims);
-        sym = new Variable(name, arrayType, NULL);
+        sym = new Variable(name, arrayType);
     } else {
-        sym = new Variable(name, p_type, NULL);
+        sym = new Variable(name, p_type);
     }
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
@@ -141,9 +141,9 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
     if(ctx->constExpLi()) {
         util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         Type *arrayType = new ArrayType(p_type, dims);
-        sym = new Variable(name, arrayType, NULL);
+        sym = new Variable(name, arrayType);
     } else {
-        sym = new Variable(name, p_type, NULL);
+        sym = new Variable(name, p_type);
     }
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
@@ -189,7 +189,7 @@ antlrcpp::Any SemPass1::visitInitVal(SysYParser::InitValContext *ctx) {
 antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     ctx->funcType()->accept(this);
     std::string name = ctx->Identifier()->getText();
-    Function *sym = new Function(name, p_type, NULL);
+    Function *sym = new Function(name, p_type);
     sym->attachEntryLabel(tr->getNewEntryLabel(sym));
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
@@ -258,10 +258,10 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     // dims.insert(dims.begin(), 0); // TODO: first dim length need to be guessed!
     Variable *sym;
     if(dims.size() == 0) {
-        sym = new Variable(name, p_type, NULL);
+        sym = new Variable(name, p_type);
     } else {
         Type *arrayType = new ArrayType(p_type, dims);
-        sym = new Variable(name, arrayType, NULL);
+        sym = new Variable(name, arrayType);
     }
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {

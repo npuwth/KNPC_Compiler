@@ -31,8 +31,6 @@ class Symbol {
     std::string name;
     // type of this symbol
     type::Type *type;
-    // definition location in the source code
-    Location *loc;
     // the scope where this symbol is defined
     scope::Scope *defined_in;
     // the order of this symbol
@@ -47,8 +45,6 @@ class Symbol {
     virtual std::string getName(void);
     // Gets the type of this symbol
     virtual type::Type *getType(void);
-    // Gets the definition location
-    virtual Location *getDefLocation(void);
     // Gets the order
     virtual int getOrder(void);
     // Sets the order
@@ -80,7 +76,7 @@ class Variable : public Symbol {
 
   public:
     // Constructor
-    Variable(std::string n, type::Type *t, Location *l);
+    Variable(std::string n, type::Type *t);
     // Sets the parameter flag
     void setParameter(void);
     // Tests whether it is a parameter
@@ -116,7 +112,7 @@ class ArrayVariable : public Symbol {
 
   public:
     // Constructor
-    ArrayVariable(std::string n, type::Type *t, Location *l);
+    ArrayVariable(std::string n, type::Type *t);
     // Sets the parameter flag
     void setParameter(void);
     // Tests whether it is a parameter
@@ -152,7 +148,7 @@ class Function : public Symbol {
 
   public:
     // Constructor
-    Function(std::string n, type::Type *resType, Location *l);
+    Function(std::string n, type::Type *resType);
     // Gets the associated scope
     scope::FuncScope *getAssociatedScope(void);
     // Gets the result type

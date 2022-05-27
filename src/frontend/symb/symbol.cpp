@@ -26,13 +26,6 @@ std::string Symbol::getName(void) { return name; }
  */
 Type *Symbol::getType(void) { return type; }
 
-/* Gets the definition location in the source code.
- *
- * RETURNS:
- *   the definition location
- */
-Location *Symbol::getDefLocation(void) { return loc; }
-
 /* Tests whether it is a Variable.
  *
  * RETURNS:

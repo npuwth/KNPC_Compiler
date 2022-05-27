@@ -90,7 +90,11 @@ void ScopeStack::open(Scope *sco) {
  */
 void ScopeStack::close(void) {
     knpc_assert(!_stack.empty());
-
+    // ScopeIterator si = _stack.top()->begin();
+    // while(si != _stack.top()->end()) {
+    //     _stack.top()->cancel(*si);
+    //     si++; // gc here?
+    // }
     _stack.top() = NULL; // for garbage-collection
     _stack.pop();
 }

@@ -19,14 +19,12 @@ using namespace knpc::tac;
  * PARAMETERS:
  *   n     - the variable name
  *   t     - the type
- *   l     - the definition location in the source code
  */
-ArrayVariable::ArrayVariable(std::string n, Type *t, Location *l) {
+ArrayVariable::ArrayVariable(std::string n, Type *t) {
     knpc_assert(NULL != t);
 
     name = n;
     type = t;
-    loc = l;
     order = -1;
 
     is_parameter = false;
@@ -86,7 +84,7 @@ bool ArrayVariable::isVariable(void) { return true; }
  *   os    - the output stream
  */
 void ArrayVariable::dump(std::ostream &os) {
-    os << loc << " -> variable ";
+    os << "arrayvariable ";
     if (is_parameter)
         os << "@" << (name);
     else
