@@ -73,7 +73,7 @@ antlrcpp::Any SemPass1::visitVarDecl(SysYParser::VarDeclContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitBType(SysYParser::BTypeContext *ctx) {
-    if(ctx->getAltNumber() == 0) {
+    if(ctx->Int()) {
         p_type = BaseType::Int;
     } else {
         p_type = BaseType::Float;
@@ -97,13 +97,13 @@ antlrcpp::Any SemPass1::visitVarDefLi(SysYParser::VarDefLiContext *ctx) {
 
 antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
     std::string name = ctx->Identifier()->getText();
-    util::Vector<int> dims = get_array_dims(ctx->constExpLi());
     Variable *sym;
-    if(dims.size() == 0) {
-        sym = new Variable(name, p_type, NULL);
-    } else {
+    if(ctx->constExpLi()) {
+        util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType, NULL);
+    } else {
+        sym = new Variable(name, p_type, NULL);
     }
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
@@ -137,20 +137,20 @@ antlrcpp::Any SemPass1::visitConstInitVal(SysYParser::ConstInitValContext *ctx) 
 
 antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
     std::string name = ctx->Identifier()->getText();
-    util::Vector<int> dims = get_array_dims(ctx->constExpLi());
     Variable *sym;
-    if(dims.size() == 0) {
-        sym = new Variable(name, p_type, NULL);
-    } else {
+    if(ctx->constExpLi()) {
+        util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType, NULL);
+    } else {
+        sym = new Variable(name, p_type, NULL);
     }
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
-    if(ctx->getAltNumber() == 1) {
+    if(ctx->initVal()) {
         if(sym->getType()->isBaseType()) {
             ctx->initVal()->accept(this);
             Temp n = tempStack.top();tempStack.pop();
@@ -214,10 +214,10 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitFuncType(SysYParser::FuncTypeContext *ctx) {
-    if(ctx->getAltNumber() == 0) {
-        ctx->bType()->accept(this);
+    if(ctx->Void()) {
+        p_type = BaseType::Void;
     }
-    else p_type = BaseType::Void;
+    else ctx->bType()->accept(this);
     return nullptr;
 }
 
@@ -475,23 +475,22 @@ antlrcpp::Any SemPass1::visitPrimary3(SysYParser::Primary3Context *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
-    size_t op = ctx->getAltNumber();
     Temp n;
-    if(op == 0) {
+    if(ctx->Decimal()) {
         std::string str = ctx->Decimal()->getText();
         int ans = 0, len = str.length();
         for(int i = 0; i < len; ++i) ans = ans*10 + (str[i]^48);
         n = tr->genLoadImm4(ans);
         n->ctval = ans;
         n->ctval = true;
-    } else if(op == 1) {
+    } else if(ctx->Octal()) {
         std::string str = ctx->Octal()->getText();
         int ans = 0, len = str.length();
         for(int i = 1; i < len; ++i) ans = ans*8 + (str[i]^48);
         n = tr->genLoadImm4(ans);
         n->ctval = ans;
         n->ctval = true;
-    } else if(op == 2) {
+    } else if(ctx->Hexadecimal()) {
         std::string str = ctx->Hexadecimal()->getText();
         int ans = 0, len = str.length();
         for(int i = 2; i < len; ++i)
@@ -547,7 +546,13 @@ antlrcpp::Any SemPass1::visitUnary3(SysYParser::Unary3Context *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitUnaryOp(SysYParser::UnaryOpContext *ctx) {
-    p_unaryOp = ctx->getAltNumber();
+    if(ctx->getText()[0] == '+') {
+        p_unaryOp = 0;
+    } else if(ctx->getText()[0] == '-') {
+        p_unaryOp = 1;
+    } else {
+        p_unaryOp = 2;
+    }
     return nullptr;
 }
 
@@ -556,13 +561,12 @@ antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
     if(ctx->mulExp()) {
         ctx->unaryExp()->accept(this);
         ctx->mulExp()->accept(this);
-        size_t op = ctx->getAltNumber();
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(op == 0) {
+        if(ctx->children[1]->getText()[0] == '*') {
             n = tr->genMul(l, r);
             n->ctval = l->ctval*r->ctval;
-        } else if(op == 1) {
+        } else if(ctx->children[1]->getText()[0] == '/') {
             n = tr->genDiv(l, r);
             if(r->ctval != 0) n->ctval = l->ctval / r->ctval;
         } else {
@@ -583,10 +587,9 @@ antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
     if(ctx->addExp()) {
         ctx->mulExp()->accept(this);
         ctx->addExp()->accept(this);
-        size_t op = ctx->getAltNumber();
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(op == 0) {
+        if(ctx->children[1]->getText()[0] == '+') {
             n = tr->genAdd(l, r);
             n->ctval = l->ctval + r->ctval;
         } else {
@@ -607,17 +610,14 @@ antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
     if(ctx->relExp()) {
         ctx->addExp()->accept(this);
         ctx->relExp()->accept(this);
-        size_t op = ctx->getAltNumber();
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(op == 0) { // <
-            n = tr->genLes(l, r);
-        } else if(op == 1) { // >
-            n = tr->genGtr(l, r);
-        } else if(op == 2) { // <=
-            n = tr->genLeq(l, r);
-        } else { // >=
-            n = tr->genGeq(l, r);
+        if(ctx->children[1]->getText()[0] == '<') { // <
+            if(ctx->children[1]->getText().length() == 1) n = tr->genLes(l, r);
+            else n = tr->genLeq(l, r);
+        } else { // >
+            if(ctx->children[1]->getText().length() == 1) n = tr->genGtr(l, r);
+            else n = tr->genGeq(l, r);
         }
     } else {
         ctx->addExp()->accept(this);
@@ -632,10 +632,9 @@ antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
     if(ctx->eqExp()) {
         ctx->relExp()->accept(this);
         ctx->eqExp()->accept(this);
-        size_t op = ctx->getAltNumber();
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(op == 0) {
+        if(ctx->children[1]->getText()[0] == '=') {
             n = tr->genEqu(l, r);
         } else {
             n = tr->genNeq(l, r);

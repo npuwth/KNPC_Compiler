@@ -788,7 +788,7 @@ void Tac::dump(std::ostream &os)
         break;
 
     case GEQ:
-        os << "    " << op0.var << " <- (" << op1.var << " <= " << op2.var
+        os << "    " << op0.var << " <- (" << op1.var << " >= " << op2.var
            << ")";
         break;
 
