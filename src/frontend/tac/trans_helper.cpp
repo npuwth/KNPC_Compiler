@@ -77,7 +77,8 @@ Temp TransHelper::getNewTempI4(void) {
     v->size = 4;
     v->offset = 0;
     v->is_offset_fixed = false;
-
+    v->ctval = 0;
+    v->isConst = false;
     return v;
 }
 

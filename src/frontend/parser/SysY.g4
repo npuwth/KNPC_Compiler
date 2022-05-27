@@ -53,7 +53,7 @@ varDecl: bType varDefLi ';';
 
 varDefLi: varDef (',' varDef)*;
 
-varDef: Identifier constExpLi? ('=' initVal)?;
+varDef: Identifier constExpLi? | Identifier constExpLi? ('=' initVal)?;
 
 initVal: exp | '{' initValLi? '}';
 

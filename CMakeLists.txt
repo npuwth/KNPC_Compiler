@@ -11,7 +11,15 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/
     ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/frontend/
+    ${PROJECT_SOURCE_DIR}/src/frontend/parser/
+    ${PROJECT_SOURCE_DIR}/src/frontend/scope/
+    ${PROJECT_SOURCE_DIR}/src/frontend/symb/
+    ${PROJECT_SOURCE_DIR}/src/frontend/tac/
+    ${PROJECT_SOURCE_DIR}/src/frontend/translation/
+    ${PROJECT_SOURCE_DIR}/src/frontend/type/
     ${PROJECT_SOURCE_DIR}/src/backend/
+    ${PROJECT_SOURCE_DIR}/src/backend/asm/
+    ${PROJECT_SOURCE_DIR}/src/3rdparty/
     ${PROJECT_SOURCE_DIR}/src/optimization/
 )
 
@@ -41,7 +49,7 @@ file(GLOB src_dir
     ${PROJECT_SOURCE_DIR}/src/frontend/parser/SysYVisitor.cpp
     ${PROJECT_SOURCE_DIR}/src/frontend/parser/SysYBaseVisitor.cpp
     ${PROJECT_SOURCE_DIR}/src/frontend/scope/*.cpp
-    ${PROJECT_SOURCE_DIR}/src/frontend/symbol/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/frontend/symb/*.cpp
     ${PROJECT_SOURCE_DIR}/src/frontend/tac/*.cpp
     ${PROJECT_SOURCE_DIR}/src/frontend/translation/*.cpp
     ${PROJECT_SOURCE_DIR}/src/frontend/type/*.cpp
@@ -52,6 +60,7 @@ file(GLOB src_dir
 
 add_executable(SysY ${src_dir})
 target_link_libraries(SysY antlr4-cpp-runtime)
+target_link_libraries(SysY gc)
 
 # Add custom target update_antlr, use `make update_antlr` to update your lexer & grammar rules anytime
 add_custom_target(update_antlr

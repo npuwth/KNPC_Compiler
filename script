@@ -1,0 +1,1 @@
+build/SysY test/000_main.c > 000_main.s

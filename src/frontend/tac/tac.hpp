@@ -11,6 +11,8 @@ namespace tac{
         int size;             // 所占字节数
         bool is_offset_fixed; // 临时变量是否被分配空间
         int offset;           // FP寄存器的偏移量
+        int ctval;            // 编译时刻的静态值
+        bool isConst;         // 是否常量
     } * Temp;
 
     typedef struct LabelObject

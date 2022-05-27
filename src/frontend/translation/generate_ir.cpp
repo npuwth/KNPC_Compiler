@@ -1,106 +1,29 @@
 /*****************************************************
  *  Implementation of the first pass.
- *  This pass will:
+ *  This pass1 will:
  *      1. semantic analysis
  *      2. generate IR (TAC)
  *
  */
 
-#include "SysYBaseVisitor.h"
-#include "config.hpp"
-#include "scope/scope.hpp"
-#include "scope/scope_stack.hpp"
-#include "symb/symbol.hpp"
-#include "type/type.hpp"
-#include "backend/asm/offset_counter.hpp"
-#include "backend/asm/arm_md.hpp"
-#include "tac/tac.hpp"
-#include "tac/trans_helper.hpp"
+#include "generate_ir.hpp"
 
-using namespace knpc;
-using namespace knpc::scope;
-using namespace knpc::symb;
-using namespace knpc::type;
-using namespace knpc::err;
-using namespace knpc::tac;
-using namespace knpc::assembly;
-
-#define POINTER_SIZE 4
-#define WORD_SIZE 4
-
-class SemPass1 : public SysYBaseVisitor { // total 50
-    virtual antlrcpp::Any visitChildren(antlr4::tree::ParseTree *ctx) override;
-    // visit program, 2
-    virtual antlrcpp::Any visitProgram(SysYParser::ProgramContext *ctx) override;
-    virtual antlrcpp::Any visitCompUnit(SysYParser::CompUnitContext *ctx) override;
-    // visit variable declarations, 11
-    virtual antlrcpp::Any visitDecl(SysYParser::DeclContext *ctx) override;
-    virtual antlrcpp::Any visitConstDecl(SysYParser::ConstDeclContext *ctx) override;
-    virtual antlrcpp::Any visitVarDecl(SysYParser::VarDeclContext *ctx) override;
-    virtual antlrcpp::Any visitConstDefLi(SysYParser::ConstDefLiContext *ctx) override;
-    virtual antlrcpp::Any visitVarDefLi(SysYParser::VarDefLiContext *ctx) override;
-    virtual antlrcpp::Any visitConstDef(SysYParser::ConstDefContext *ctx) override;
-    virtual antlrcpp::Any visitVarDef(SysYParser::VarDefContext *ctx) override;    
-    util::Vector<int> get_array_dims(SysYParser::ConstExpLiContext *ctx);
-    virtual antlrcpp::Any visitConstInitVal(SysYParser::ConstInitValContext *ctx) override;
-    virtual antlrcpp::Any visitConstInitValLi(SysYParser::ConstInitValLiContext *ctx) override;
-    virtual antlrcpp::Any visitInitVal(SysYParser::InitValContext *ctx) override;
-    virtual antlrcpp::Any visitInitValLi (SysYParser::InitValLiContext *ctx) override;
-    // visit expressions, 20
-    virtual antlrcpp::Any visitConstExpLi(SysYParser::ConstExpLiContext *ctx) override;
-    virtual antlrcpp::Any visitExpLi(SysYParser::ExpLiContext *ctx) override;
-    virtual antlrcpp::Any visitConstExp(SysYParser::ConstExpContext *ctx) override;
-    virtual antlrcpp::Any visitExp(SysYParser::ExpContext *ctx) override;
-    virtual antlrcpp::Any visitCond(SysYParser::CondContext *ctx) override;
-    virtual antlrcpp::Any visitLVal(SysYParser::LValContext *ctx) override;
-    virtual antlrcpp::Any visitPrimary1(SysYParser::Primary1Context *ctx) override;
-    virtual antlrcpp::Any visitPrimary2(SysYParser::Primary2Context *ctx) override;
-    virtual antlrcpp::Any visitPrimary3(SysYParser::Primary3Context *ctx) override;
-    virtual antlrcpp::Any visitNumber(SysYParser::NumberContext *ctx) override;
-    virtual antlrcpp::Any visitUnary1(SysYParser::Unary1Context *ctx) override;
-    virtual antlrcpp::Any visitUnary2(SysYParser::Unary2Context *ctx) override;
-    virtual antlrcpp::Any visitUnary3(SysYParser::Unary3Context *ctx) override;
-    virtual antlrcpp::Any visitUnaryOp(SysYParser::UnaryOpContext *ctx) override;
-    virtual antlrcpp::Any visitMulExp(SysYParser::MulExpContext *ctx) override;
-    virtual antlrcpp::Any visitAddExp(SysYParser::AddExpContext *ctx) override;
-    virtual antlrcpp::Any visitRelExp(SysYParser::RelExpContext *ctx) override;
-    virtual antlrcpp::Any visitEqExp(SysYParser::EqExpContext *ctx) override;
-    virtual antlrcpp::Any visitLAndExp(SysYParser::LAndExpContext *ctx) override;
-    virtual antlrcpp::Any visitLOrExp(SysYParser::LOrExpContext *ctx) override;
-    // visit function declarations, 8
-    virtual antlrcpp::Any visitFuncDef(SysYParser::FuncDefContext *ctx) override;
-    virtual antlrcpp::Any visitFuncType(SysYParser::FuncTypeContext *ctx) override;
-    virtual antlrcpp::Any visitFuncFParams(SysYParser::FuncFParamsContext *ctx) override;
-    virtual antlrcpp::Any visitFuncFParam(SysYParser::FuncFParamContext *ctx) override;
-    virtual antlrcpp::Any visitFuncRParams(SysYParser::FuncRParamsContext *ctx) override;
-    virtual antlrcpp::Any visitBlock(SysYParser::BlockContext *ctx) override;
-    virtual antlrcpp::Any visitBlockItemLi(SysYParser::BlockItemLiContext *ctx) override;
-    virtual antlrcpp::Any visitBlockItem(SysYParser::BlockItemContext *ctx) override;
-    // visit statements, 8
-    virtual antlrcpp::Any visitIfStmt(SysYParser::IfStmtContext *ctx) override;
-    virtual antlrcpp::Any visitExpStmt(SysYParser::ExpStmtContext *ctx) override;
-    virtual antlrcpp::Any visitBlockStmt(SysYParser::BlockStmtContext *ctx) override;
-    virtual antlrcpp::Any visitBreakStmt(SysYParser::BreakStmtContext *ctx) override;
-    virtual antlrcpp::Any visitWhileStmt(SysYParser::WhileStmtContext *ctx) override;
-    virtual antlrcpp::Any visitReturnStmt(SysYParser::ReturnStmtContext *ctx) override;    
-    virtual antlrcpp::Any visitContinueStmt(SysYParser::ContinueStmtContext *ctx) override;
-    virtual antlrcpp::Any visitAssignment(SysYParser::AssignmentContext *ctx) override;
-    // visit types, 1
-    virtual antlrcpp::Any visitBType(SysYParser::BTypeContext *ctx) override;
-};
-
-TransHelper *tr = new TransHelper(new ArmDesc());
 #define RESET_OFFSET() tr->getOffsetCounter()->reset(OffsetCounter::PARAMETER)
 #define NEXT_OFFSET(x) tr->getOffsetCounter()->next(OffsetCounter::PARAMETER, x)
 
 // global tmp value for use in translation(as the ret value of the previous function)
 Type *p_type = NULL;
-std::string p_name = NULL;
+std::string p_name = "helloworld";
 size_t p_unaryOp = 0;
+int order = 0; // used in funcDef
 util::Stack<Temp> tempStack;
 
 tac::Label current_break_label;
 tac::Label current_continue_label;
+
+SemPass1::SemPass1(TransHelper *helper) {
+    tr = helper;
+}
 
 antlrcpp::Any SemPass1::visitChildren(antlr4::tree::ParseTree *ctx) {
     size_t n = ctx->children.size();
@@ -113,7 +36,8 @@ util::Vector<int> SemPass1::get_array_dims(SysYParser::ConstExpLiContext *ctx) {
     util::Vector<int> ret;
     std::vector<SysYParser::ConstExpContext *> dims = ctx->constExp();
     for(auto i : dims) {
-        int cur = i->accept(this); // the first dim is not null(according to the SysY Def)
+        i->accept(this); // the first dim is not null(according to the SysY Def)
+        int cur = tempStack.top()->ctval;tempStack.pop();
         if( i < 0) throw ZeroLengthedArrayError();
         ret.push_back(cur);
     }
@@ -184,15 +108,34 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType, NULL);
     }
-    Symbol *s = scopes->lookup(name, 0);
+    Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
-    // need not more action if global
-    // TODO: deal with initVal
-
+    // const variable must be init here.
+    if(sym->getType()->isBaseType()) {
+        ctx->constInitVal()->accept(this);
+        Temp n = tempStack.top();tempStack.pop();
+        if(sym->isGlobalVar()) {
+            tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize());
+        } else {
+            sym->attachTemp(tr->getNewTempI4());
+            tr->genAssign(sym->getTemp(), n);
+        }
+    } else {
+        //TODO: array init to do
+    }
     return nullptr;
+}
+
+antlrcpp::Any SemPass1::visitConstInitValLi(SysYParser::ConstInitValLiContext *ctx) {
+    return visitChildren(ctx);
+}
+
+antlrcpp::Any SemPass1::visitConstInitVal(SysYParser::ConstInitValContext *ctx) {
+    //TODO: array init to do
+    return visitChildren(ctx);
 }
 
 antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
@@ -205,39 +148,68 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType, NULL);
     }
-    Symbol *s = scopes->lookup(name, 0);
+    Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
-    // need not more action if global
-    // TODO: deal with initVal
-    // sym->setGlobalInit(x); // TODO: need const propagation here.
-    ctx->initVal()->accept(this);
-    if(sym->isGlobalVar()) {
-       
+    if(ctx->getRuleIndex() == 1) {
+        if(sym->getType()->isBaseType()) {
+            ctx->initVal()->accept(this);
+            Temp n = tempStack.top();tempStack.pop();
+            if(sym->isGlobalVar()) {
+                tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize());
+            } else {
+                sym->attachTemp(tr->getNewTempI4());
+                tr->genAssign(sym->getTemp(), n);
+            }
+        } else {
+            //TODO: array init to do
+        }
     } else {
-        
+        if(sym->getType()->isBaseType()) {
+            if(sym->isGlobalVar()) {
+                tr->genGlobalVarible(name, 0, sym->getType()->getSize());
+            } else {
+                sym->attachTemp(tr->getNewTempI4());
+            }
+        } else {
+            //TODO: array to do here
+        }
     }
     return nullptr;
 }    
+
+antlrcpp::Any SemPass1::visitInitValLi(SysYParser::InitValLiContext *ctx) {
+    return visitChildren(ctx);
+}
+
+antlrcpp::Any SemPass1::visitInitVal(SysYParser::InitValContext *ctx) {
+    //TODO: array init to do
+    return visitChildren(ctx);
+}
 
 antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     ctx->funcType()->accept(this);
     std::string name = ctx->Identifier()->getText();
     Function *sym = new Function(name, p_type, NULL);
-    Symbol *s = scopes->lookup(name, 0);
+    sym->attachEntryLabel(tr->getNewEntryLabel(sym));
+    Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
     scopes->open(sym->getAssociatedScope());
-    // util::List<Type *> paramTypes = get_func_paramtypes(ctx->funcFParams());
+
+    order = 0;    
     ctx->funcFParams()->accept(this); // formal params
-    // TODO: 
+    sym->offset = sym->getOrder()*POINTER_SIZE;
+    RESET_OFFSET();
+    // TODO: other formal arguments
     tr->startFunc(sym);
     ctx->block()->accept(this);
-    tr->genReturn(tr->genLoadImm4(0)); // Return 0 by default
+    if(sym->getResultType()->equal(BaseType::Int)) 
+        tr->genReturn(tr->genLoadImm4(0)); // Return 0 by default
     tr->endFunc();
 
     scopes->close();
@@ -270,7 +242,7 @@ antlrcpp::Any SemPass1::visitExpLi(SysYParser::ExpLiContext *ctx) {
 
 antlrcpp::Any SemPass1::visitConstExp(SysYParser::ConstExpContext *ctx) {
 //TODO: need const propagation here
-    return nullptr;
+    return visitChildren(ctx);
 }
 
 antlrcpp::Any SemPass1::visitExp(SysYParser::ExpContext *ctx) {
@@ -289,7 +261,7 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     ctx->bType()->accept(this);
     std::string name = ctx->Identifier()->getText();
     util::Vector<int> dims = get_array_dims(ctx->constExpLi());
-    dims.insert(dims.begin(), 0); // TODO: first dim length need to be guessed!
+    // dims.insert(dims.begin(), 0); // TODO: first dim length need to be guessed!
     Variable *sym;
     if(dims.size() == 0) {
         sym = new Variable(name, p_type, NULL);
@@ -297,17 +269,23 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType, NULL);
     }
-    Symbol *s = scopes->lookup(name, 0);
+    Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
     }
-    //TODO: var declare
     scopes->declare(sym);
+    sym->setOrder(order++);
+    sym->attachTemp(tr->allocNewTempI4(sym->getType()->getSize()));
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitFuncRParams(SysYParser::FuncRParamsContext *ctx) {
-//TODO:
+    for(auto it = ctx->exp().begin();
+    it != ctx->exp().end(); ++it) {
+        (*it)->accept(this);
+        Temp n = tempStack.top();tempStack.pop();
+        tr->genParam(n);
+    }
     return nullptr;
 }
 
@@ -401,10 +379,10 @@ antlrcpp::Any SemPass1::visitContinueStmt (SysYParser::ContinueStmtContext *ctx)
 antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
     // differ according to the lval(array? global?)
     ctx->exp()->accept(this);
+    Temp r = tempStack.top();tempStack.pop();
     ctx->lVal()->accept(this);
     // tempStack.pop(); // move redundant temp from lVal
-    Temp r = tempStack.top();tempStack.pop();
-    Variable *sym = (Variable *)scopes->lookup(p_name, 1);
+    Variable *sym = (Variable *)(scopes->lookup(p_name, true));
     if(sym->isGlobalVar()) {
         Temp n = tr->genLoadSymbol(p_name);
         if(sym->getType()->isArrayType()) {
@@ -446,7 +424,6 @@ antlrcpp::Any SemPass1::visitCond(SysYParser::CondContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitLVal(SysYParser::LValContext *ctx) {
-    // TODO:
     std::string name = ctx->Identifier()->getText();
     visitChildren(ctx);
     p_name = name;
@@ -461,9 +438,10 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
     // special case here, need to gen value manually
     ctx->lVal()->accept(this);
     Temp n;
-    Variable *sym = (Variable *)(scopes->lookup(p_name, 1));
+    Variable *sym = (Variable *)(scopes->lookup(p_name, true));
     if(sym->isGlobalVar()) {
         n = tr->genLoadSymbol(p_name);
+        bool isConst = n->isConst;
         if(sym->getType()->isArrayType()) {
             int c_dim = 1;
             Temp x, y;
@@ -477,8 +455,10 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
             }
         }
         n = tr->genLoad(n, 0);
+        n->isConst = isConst;
     } else {
         n = sym->getTemp();
+        bool isConst = n->isConst;
         if(sym->getType()->isArrayType()) {
             int c_dim = 1;
             Temp x, y;
@@ -492,6 +472,7 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
             }
             n = tr->genLoad(n, 0);
         }
+        n->isConst = isConst;
     }
     tempStack.push(n);
     return nullptr;
@@ -509,11 +490,15 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
         int ans = 0, len = str.length();
         for(int i = 0; i < len; ++i) ans = ans*10 + (str[i]^48);
         n = tr->genLoadImm4(ans);
+        n->ctval = ans;
+        n->ctval = true;
     } else if(op == 1) {
         std::string str = ctx->Octal()->getText();
         int ans = 0, len = str.length();
         for(int i = 1; i < len; ++i) ans = ans*8 + (str[i]^48);
         n = tr->genLoadImm4(ans);
+        n->ctval = ans;
+        n->ctval = true;
     } else if(op == 2) {
         std::string str = ctx->Hexadecimal()->getText();
         int ans = 0, len = str.length();
@@ -524,9 +509,13 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
             else ans = ans*16 + 10 + (str[i]-'a');
         }
         n = tr->genLoadImm4(ans);
+        n->ctval = ans;
+        n->ctval = true;
     } else {
         std::string str = ctx->FloatLiteral()->getText();
         n = tr->genLoadImm4(0); // TODO: Float here! now return 0
+        n->ctval = 0;
+        n->ctval = true;
     }
     tempStack.push(n);
     return nullptr;
@@ -537,7 +526,10 @@ antlrcpp::Any SemPass1::visitUnary1(SysYParser::Unary1Context *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
-    // tr->genCall();
+    visitChildren(ctx);
+    std::string name = ctx->Identifier()->getText();
+    Function *sym = (Function *)(scopes->lookup(name, true));
+    tr->genCall(sym->getEntryLabel());
     // TODO: call function here. a little complex
     return nullptr;
 }
@@ -551,8 +543,12 @@ antlrcpp::Any SemPass1::visitUnary3(SysYParser::Unary3Context *ctx) {
         n = r;
     } else if(p_unaryOp == 1) {
         n = tr->genNeg(r);
+        n->ctval = -1*r->ctval;
+        n->isConst = r->isConst;
     } else {
         n = tr->genLNot(r); // seqz
+        n->ctval = (r->ctval == 0);
+        n->isConst = r->isConst;
     }
     tempStack.push(n);
 }
@@ -571,11 +567,15 @@ antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
     Temp n;
     if(op == 0) {
         n = tr->genMul(l, r);
+        n->ctval = l->ctval*r->ctval;
     } else if(op == 1) {
         n = tr->genDiv(l, r);
+        if(r->ctval != 0) n->ctval = l->ctval / r->ctval;
     } else {
         n = tr->genMod(l, r);
+        if(r->ctval != 0) n->ctval = l->ctval % r->ctval;
     }
+    n->isConst = l->isConst && r->isConst;
     tempStack.push(n);
 }
 antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
@@ -587,9 +587,12 @@ antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
     Temp n;
     if(op == 0) {
         n = tr->genAdd(l, r);
+        n->ctval = l->ctval + r->ctval;
     } else {
         n = tr->genSub(l, r);
+        n->ctval = l->ctval - r->ctval;
     }
+    n->isConst = l->isConst && r->isConst;
     tempStack.push(n);
 }
 antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
@@ -645,7 +648,8 @@ antlrcpp::Any SemPass1::visitLOrExp(SysYParser::LOrExpContext *ctx) { // TODO: ç
 }
 
 // root function, called by main
-Piece *runSemPass1(SysYParser::ProgramContext *tree) {
-    tree->accept(new SemPass1());
-    return tr->getPiece();
+Piece *runSemPass1(SysYParser::ProgramContext *tree, MachineDesc *md) {
+    TransHelper *helper = new TransHelper(md);
+    tree->accept(new SemPass1(helper));
+    return helper->getPiece();
 }

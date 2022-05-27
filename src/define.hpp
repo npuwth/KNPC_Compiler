@@ -12,6 +12,7 @@
 
 #ifndef KNPC_AST_DEFINED
 #include "3rdparty/list.hpp"
+#include "3rdparty/set.hpp"
 #endif
 
 namespace knpc
