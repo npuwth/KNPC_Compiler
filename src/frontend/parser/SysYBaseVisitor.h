@@ -151,7 +151,15 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPrimaryExp(SysYParser::PrimaryExpContext *ctx) override {
+  virtual antlrcpp::Any visitPrimary1(SysYParser::Primary1Context *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitPrimary2(SysYParser::Primary2Context *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitPrimary3(SysYParser::Primary3Context *ctx) override {
     return visitChildren(ctx);
   }
 

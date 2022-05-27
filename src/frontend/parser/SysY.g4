@@ -65,7 +65,7 @@ funcType: bType | Void;
 
 funcFParams: funcFParam (',' funcFParam)*;
 
-funcFParam: bType Identifier ('[' ']' expLi?)?; // ? THU is constExpLi
+funcFParam: bType Identifier ('[' ']' constExpLi?)?; // ? THU is constExpLi
 
 expLi: ('[' exp ']')+;
 
@@ -92,7 +92,11 @@ cond: lOrExp;
 
 lVal: Identifier expLi?;
 
-primaryExp: '(' exp ')' | lVal | number;
+primaryExp: 
+	'(' exp ')'                               # primary1
+	| lVal                                    # primary2
+	| number                                  # primary3
+	;
 
 number: Decimal | Octal | Hexadecimal | FloatLiteral;
 
@@ -104,7 +108,7 @@ unaryExp:
 
 unaryOp: '+' | '-' | '!';
 
-funcRParams: exp (',' funcRParams)?;
+funcRParams: exp (',' exp)*;
 
 mulExp: unaryExp (('*' | '/' | '%') mulExp)?;
 

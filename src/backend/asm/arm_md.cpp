@@ -221,7 +221,7 @@ void ArmDesc::emitTac(Tac *t) {
 
     case Tac::LNOT:
         emitUnaryTac(ArmInstr::TEQZ, t); // 与0相等测试
-        emitUnaryTac(ArmInstr::SEQ, t);  // ?
+        emitUnaryTac(ArmInstr::SEQ, t);
         emitUnaryTac(ArmInstr::CNE, t);
         break;
     
@@ -497,7 +497,7 @@ void ArmDesc::emit(std::string label, const char *body, const char *comment) {
         else if (NULL != body)
             os << "          " << std::left << std::setw(30) << body;
 
-        if (NULL != comment)
+        if (NULL != comment && '\0' != *comment)
             os << "@ " << comment;
     }
 

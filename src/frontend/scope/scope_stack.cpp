@@ -32,7 +32,7 @@ ScopeStack::ScopeStack() { _global = NULL; }
  *  RETURNS:
  *    the symbol if that name is defined; NULL other wise
  */
-Symbol *ScopeStack::lookup(std::string id, bool through) {
+Symbol *ScopeStack::lookup(std::string id, bool through = true) {
     Symbol *s = NULL;
 
     if (id.empty())
