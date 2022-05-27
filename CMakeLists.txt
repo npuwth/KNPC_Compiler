@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Java)
 
+add_definitions("-Wall -g")
+
 include_directories(
     ${PROJECT_SOURCE_DIR}/third_party/
     ${PROJECT_SOURCE_DIR}/third_party/antlr4-runtime/

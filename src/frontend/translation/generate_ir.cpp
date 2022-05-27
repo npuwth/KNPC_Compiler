@@ -48,9 +48,8 @@ antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
     GlobalScope *gscope = new GlobalScope(); // gscope for use
     scopes->open(gscope);
 
-    for(auto it = ctx->compUnit().begin();
-    it != ctx->compUnit().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->compUnit()) {
+        it->accept(this);
     }
 
     scopes->close();
@@ -74,7 +73,7 @@ antlrcpp::Any SemPass1::visitVarDecl(SysYParser::VarDeclContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitBType(SysYParser::BTypeContext *ctx) {
-    if(ctx->getRuleIndex() == 0) {
+    if(ctx->getAltNumber() == 0) {
         p_type = BaseType::Int;
     } else {
         p_type = BaseType::Float;
@@ -83,17 +82,15 @@ antlrcpp::Any SemPass1::visitBType(SysYParser::BTypeContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitConstDefLi(SysYParser::ConstDefLiContext *ctx) {
-    for(auto it = ctx->constDef().begin();
-    it != ctx->constDef().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->constDef()) {
+        it->accept(this);
     }
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitVarDefLi(SysYParser::VarDefLiContext *ctx) {
-    for(auto it = ctx->varDef().begin();
-    it != ctx->varDef().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->varDef()) {
+        it->accept(this);
     }
     return nullptr;
 }
@@ -153,7 +150,7 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
-    if(ctx->getRuleIndex() == 1) {
+    if(ctx->getAltNumber() == 1) {
         if(sym->getType()->isBaseType()) {
             ctx->initVal()->accept(this);
             Temp n = tempStack.top();tempStack.pop();
@@ -202,7 +199,7 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     scopes->open(sym->getAssociatedScope());
 
     order = 0;    
-    ctx->funcFParams()->accept(this); // formal params
+    if(ctx->funcFParams()) ctx->funcFParams()->accept(this); // formal params
     sym->offset = sym->getOrder()*POINTER_SIZE;
     RESET_OFFSET();
     // TODO: other formal arguments
@@ -217,7 +214,7 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitFuncType(SysYParser::FuncTypeContext *ctx) {
-    if(ctx->getRuleIndex() == 0) {
+    if(ctx->getAltNumber() == 0) {
         ctx->bType()->accept(this);
     }
     else p_type = BaseType::Void;
@@ -225,17 +222,15 @@ antlrcpp::Any SemPass1::visitFuncType(SysYParser::FuncTypeContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitConstExpLi(SysYParser::ConstExpLiContext *ctx) {
-    for(auto it = ctx->constExp().begin();
-    it != ctx->constExp().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->constExp()) {
+        it->accept(this);
     }
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitExpLi(SysYParser::ExpLiContext *ctx) {
-    for(auto it = ctx->exp().begin();
-    it != ctx->exp().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->exp()) {
+        it->accept(this);
     }
     return nullptr;
 }
@@ -250,9 +245,8 @@ antlrcpp::Any SemPass1::visitExp(SysYParser::ExpContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitFuncFParams(SysYParser::FuncFParamsContext *ctx) {
-    for(auto it = ctx->funcFParam().begin();
-    it != ctx->funcFParam().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->funcFParam()) {
+        it->accept(this);
     }
     return nullptr;
 }
@@ -280,9 +274,8 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitFuncRParams(SysYParser::FuncRParamsContext *ctx) {
-    for(auto it = ctx->exp().begin();
-    it != ctx->exp().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->exp()) {
+        it->accept(this);
         Temp n = tempStack.top();tempStack.pop();
         tr->genParam(n);
     }
@@ -298,9 +291,8 @@ antlrcpp::Any SemPass1::visitBlock(SysYParser::BlockContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitBlockItemLi(SysYParser::BlockItemLiContext *ctx) {
-    for(auto it = ctx->blockItem().begin();
-    it != ctx->blockItem().end(); ++it) {
-        (*it)->accept(this);
+    for(auto it : ctx->blockItem()) {
+        it->accept(this);
     }
     return nullptr;
 }
@@ -315,12 +307,12 @@ antlrcpp::Any SemPass1::visitIfStmt (SysYParser::IfStmtContext *ctx) {
     ctx->cond()->accept(this);
     tr->genJumpOnZero(L1, tempStack.top());
     tempStack.pop();
-    auto it = ctx->stmt().begin();
-    (*it)->accept(this);++it; // true branch
+    auto it = ctx->stmt()[0];
+    it->accept(this); // true branch
     tr->genJump(L2);
     tr->genMarkLabel(L1);
-    if(it != ctx->stmt().end()) 
-        (*it)->accept(this); // false branch
+    it = ctx->stmt()[1];
+    if(it) it->accept(this); // false branch
     tr->genMarkLabel(L2);
     return nullptr;
 }
@@ -483,7 +475,7 @@ antlrcpp::Any SemPass1::visitPrimary3(SysYParser::Primary3Context *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
-    size_t op = ctx->getRuleIndex();
+    size_t op = ctx->getAltNumber();
     Temp n;
     if(op == 0) {
         std::string str = ctx->Decimal()->getText();
@@ -551,100 +543,145 @@ antlrcpp::Any SemPass1::visitUnary3(SysYParser::Unary3Context *ctx) {
         n->isConst = r->isConst;
     }
     tempStack.push(n);
+    return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitUnaryOp(SysYParser::UnaryOpContext *ctx) {
-    p_unaryOp = ctx->getRuleIndex();
+    p_unaryOp = ctx->getAltNumber();
     return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
-    ctx->unaryExp()->accept(this);
-    ctx->mulExp()->accept(this);
-    size_t op = ctx->getRuleIndex();
-    Temp r = tempStack.top();tempStack.pop();
-    Temp l = tempStack.top();tempStack.pop();
     Temp n;
-    if(op == 0) {
-        n = tr->genMul(l, r);
-        n->ctval = l->ctval*r->ctval;
-    } else if(op == 1) {
-        n = tr->genDiv(l, r);
-        if(r->ctval != 0) n->ctval = l->ctval / r->ctval;
+    if(ctx->mulExp()) {
+        ctx->unaryExp()->accept(this);
+        ctx->mulExp()->accept(this);
+        size_t op = ctx->getAltNumber();
+        Temp r = tempStack.top();tempStack.pop();
+        Temp l = tempStack.top();tempStack.pop();
+        if(op == 0) {
+            n = tr->genMul(l, r);
+            n->ctval = l->ctval*r->ctval;
+        } else if(op == 1) {
+            n = tr->genDiv(l, r);
+            if(r->ctval != 0) n->ctval = l->ctval / r->ctval;
+        } else {
+            n = tr->genMod(l, r);
+            if(r->ctval != 0) n->ctval = l->ctval % r->ctval;
+        }
+        n->isConst = l->isConst && r->isConst;
     } else {
-        n = tr->genMod(l, r);
-        if(r->ctval != 0) n->ctval = l->ctval % r->ctval;
+        ctx->unaryExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        n = r;
     }
-    n->isConst = l->isConst && r->isConst;
     tempStack.push(n);
+    return nullptr;
 }
 antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
-    ctx->mulExp()->accept(this);
-    ctx->addExp()->accept(this);
-    size_t op = ctx->getRuleIndex();
-    Temp r = tempStack.top();tempStack.pop();
-    Temp l = tempStack.top();tempStack.pop();
     Temp n;
-    if(op == 0) {
-        n = tr->genAdd(l, r);
-        n->ctval = l->ctval + r->ctval;
+    if(ctx->addExp()) {
+        ctx->mulExp()->accept(this);
+        ctx->addExp()->accept(this);
+        size_t op = ctx->getAltNumber();
+        Temp r = tempStack.top();tempStack.pop();
+        Temp l = tempStack.top();tempStack.pop();
+        if(op == 0) {
+            n = tr->genAdd(l, r);
+            n->ctval = l->ctval + r->ctval;
+        } else {
+            n = tr->genSub(l, r);
+            n->ctval = l->ctval - r->ctval;
+        }
+        n->isConst = l->isConst && r->isConst;
     } else {
-        n = tr->genSub(l, r);
-        n->ctval = l->ctval - r->ctval;
+        ctx->mulExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        n = r;
     }
-    n->isConst = l->isConst && r->isConst;
     tempStack.push(n);
+    return nullptr;
 }
 antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
-    ctx->addExp()->accept(this);
-    ctx->relExp()->accept(this);
-    size_t op = ctx->getRuleIndex();
-    Temp r = tempStack.top();tempStack.pop();
-    Temp l = tempStack.top();tempStack.pop();
     Temp n;
-    if(op == 0) { // <
-        n = tr->genLes(l, r);
-    } else if(op == 1) { // >
-        n = tr->genGtr(l, r);
-    } else if(op == 2) { // <=
-        n = tr->genLeq(l, r);
-    } else { // >=
-        n = tr->genGeq(l, r);
+    if(ctx->relExp()) {
+        ctx->addExp()->accept(this);
+        ctx->relExp()->accept(this);
+        size_t op = ctx->getAltNumber();
+        Temp r = tempStack.top();tempStack.pop();
+        Temp l = tempStack.top();tempStack.pop();
+        if(op == 0) { // <
+            n = tr->genLes(l, r);
+        } else if(op == 1) { // >
+            n = tr->genGtr(l, r);
+        } else if(op == 2) { // <=
+            n = tr->genLeq(l, r);
+        } else { // >=
+            n = tr->genGeq(l, r);
+        }
+    } else {
+        ctx->addExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        n = r;
     }
     tempStack.push(n);
+    return nullptr;
 }
 antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
-    ctx->relExp()->accept(this);
-    ctx->eqExp()->accept(this);
-    size_t op = ctx->getRuleIndex();
-    Temp r = tempStack.top();tempStack.pop();
-    Temp l = tempStack.top();tempStack.pop();
     Temp n;
-    if(op == 0) {
-        n = tr->genEqu(l, r);
+    if(ctx->eqExp()) {
+        ctx->relExp()->accept(this);
+        ctx->eqExp()->accept(this);
+        size_t op = ctx->getAltNumber();
+        Temp r = tempStack.top();tempStack.pop();
+        Temp l = tempStack.top();tempStack.pop();
+        if(op == 0) {
+            n = tr->genEqu(l, r);
+        } else {
+            n = tr->genNeq(l, r);
+        }
     } else {
-        n = tr->genNeq(l, r);
+        ctx->relExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        n = r;
     }
     tempStack.push(n);
+    return nullptr;
 }
 
 // LAnd, LOr, LNot: "L" means "Logic"
 antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) { // TODO: 短路求值
-    ctx->eqExp()->accept(this);
-    ctx->lAndExp()->accept(this);
-    Temp r = tempStack.top();tempStack.pop();
-    Temp l = tempStack.top();tempStack.pop();
-    Temp n = tr->genLAnd(l, r);
+    Temp n;
+    if(ctx->lAndExp()) {
+        ctx->eqExp()->accept(this);
+        ctx->lAndExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        Temp l = tempStack.top();tempStack.pop();
+        n = tr->genLAnd(l, r);
+    } else {
+        ctx->eqExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        n = r;
+    }
     tempStack.push(n);
+    return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitLOrExp(SysYParser::LOrExpContext *ctx) { // TODO: 短路求值
-    ctx->lAndExp()->accept(this);
-    ctx->lOrExp()->accept(this);
-    Temp r = tempStack.top();tempStack.pop();
-    Temp l = tempStack.top();tempStack.pop();
-    Temp n = tr->genLOr(l, r);
+    Temp n;
+    if(ctx->lOrExp()) {
+        ctx->lAndExp()->accept(this);
+        ctx->lOrExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        Temp l = tempStack.top();tempStack.pop();
+        n = tr->genLOr(l, r);
+    } else {
+        ctx->lAndExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
+        n = r;
+    }
     tempStack.push(n);
+    return nullptr;
 }
 
 // root function, called by main

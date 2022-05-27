@@ -47,6 +47,7 @@ src/.vscode/**
 *.exe
 *.out
 *.app
+*.tmp
 
 ## CMAKE IGNORE
 build
@@ -73,3 +74,5 @@ testcases
 failcases
 out
 minidecaf-tests
+
+test.sh

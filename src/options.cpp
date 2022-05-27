@@ -16,7 +16,8 @@
 using namespace knpc;
 
 // The current running level (PARSER/SEMANTIC/TACGEN/DATAFLOW/ASMGEN)
-Option::opt_t Option::level = UNKNOWN;
+// Option::opt_t Option::level = UNKNOWN;
+Option::opt_t Option::level = ASMGEN;
 
 // The backend architecture
 Option::opt_t Option::arch = UNKNOWN;

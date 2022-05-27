@@ -29,7 +29,7 @@ Identifier: [a-zA-Z_][a-zA-Z0-9_]*;
 // parser rules
 // parser tokens should begin with *lowercase*
 
-program: compUnit+;
+program: compUnit+ EOF;
 
 compUnit: (funcDef | decl) compUnit?;
 

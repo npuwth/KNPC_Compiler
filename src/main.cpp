@@ -14,12 +14,13 @@ int main(int argc, char **argv) {
 
     GC_INIT();
 
-    if (argc != 2) {
-        std::cerr << "[error] Input sourcefile required: ./SysY <sourcefile>\n";
-        return 1;
-    }
+    // if (argc != 2) {
+    //     std::cerr << "[error] Input sourcefile required: ./SysY <sourcefile>\n";
+    //     return 1;
+    // }
     std::ifstream sourceFile;
     sourceFile.open(argv[1]);
+    // sourceFile.open("../test/000_main.c");
     
     // lexer & parser part of antlr4
     ANTLRInputStream input(sourceFile);
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
     SysYParser::ProgramContext* treeNode = parser.program(); // root node
     tac::Piece *p = runSemPass1(treeNode, md);
 
+    // p->dump(std::cout); // debug
     // generate asm
     md->emitPieces(NULL, p, std::cout);
     std::cout.flush();
