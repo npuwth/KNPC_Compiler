@@ -2,6 +2,7 @@
 #define __KNPC_TAC__
 #include <iostream>
 #include  "define.hpp"
+#include "3rdparty/set.hpp"
 namespace knpc{
 #define KNPC_TAC_DEFINED
 namespace tac{
