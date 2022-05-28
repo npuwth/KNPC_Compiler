@@ -241,6 +241,15 @@ void ArmDesc::emitTac(Tac *t) {
         emitUnaryTac(ArmInstr::CEQ, t);
         break;
         
+    case Tac::LES:
+	emitBinaryTac(ArmInstr::SUBS, t);
+	emitUnaryTac(ArmInstr::SLT, t);
+	emitUnaryTac(ArmInstr::CGE, t);
+
+    case Tac::LEQ:
+	emitBinaryTac(ArmInstr::SUBS, t);
+	emitUnaryTac(ArmInstr::SLE, t);
+	emitUnaryTac(ArmInstr::CGT, t);
 
     case Tac::GEQ:
         emitBinaryTac(ArmInstr::SUBS, t);
