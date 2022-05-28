@@ -285,7 +285,7 @@ antlrcpp::Any SemPass1::visitFuncRParams(SysYParser::FuncRParamsContext *ctx) {
 antlrcpp::Any SemPass1::visitBlock(SysYParser::BlockContext *ctx) {
     Scope *blockScope = new LocalScope();
     scopes->open(blockScope);
-    ctx->blockItemLi()->accept(this); // add local scope here
+    visitChildren(ctx); // add local scope here
     scopes->close();
     return nullptr;
 }

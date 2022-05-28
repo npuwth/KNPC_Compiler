@@ -90,10 +90,11 @@ void ArrayVariable::dump(std::ostream &os) {
     else
         os << (name);
     os << " : " << type;
-    if (isGlobalVar())
+    if (isGlobalVar()) {
         os << " = " << "{ ";
         for(auto i : global_init) os << i << ' ';
         os << "}";
+    }
 }
 
 /* Attaches the register object to this symbol.
