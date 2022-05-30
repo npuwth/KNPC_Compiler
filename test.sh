@@ -1,4 +1,4 @@
-COMPILER='./build/SysY'
+COMPILER='./SysY'
 TEST_PATH='./test'
 make
 passed=0
