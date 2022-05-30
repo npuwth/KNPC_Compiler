@@ -61,7 +61,7 @@ class TransHelper {
     Temp genLNot(Temp);
     // Bitwise
     Temp genBNot(Temp);
-    // Memory Access
+    // Memory Access           important
     Temp genPop(void);
     void genPush(Temp);
     Temp genCall(Label);
@@ -70,7 +70,7 @@ class TransHelper {
     void genJump(Label);
     void genJumpOnZero(Label, Temp);
     void genReturn(Temp);
-    // Miscellaneous
+    // Miscellaneous 其他       important
     void genAssign(Temp, Temp);
     Temp genLoadImm4(int);
     Temp genLoadSymbol(std::string);

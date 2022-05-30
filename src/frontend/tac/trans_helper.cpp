@@ -32,7 +32,7 @@ using namespace knpc::assembly;
 void TransHelper::chainUp(Tac *t) {
     t->prev = tacs_tail;
 
-    if (NULL == tacs)
+    if (NULL == tacs) // tacs is head , tacs_tail is tail
         tacs_tail = tacs = t;
     else
         tacs_tail = tacs_tail->next = t;
@@ -43,7 +43,7 @@ void TransHelper::chainUp(Tac *t) {
 /* Constructs a tranlsation helper.
  *
  */
-TransHelper::TransHelper(MachineDesc *md) {
+TransHelper::TransHelper(MachineDesc *md) { // init piece list and tac list 
     knpc_assert(NULL != md);
 
     mach = md;
