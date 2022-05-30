@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
     //     return 1;
     // }
     std::ifstream sourceFile;
-    // sourceFile.open(argv[1]);
-    sourceFile.open("../test/015_add2.c");
+    sourceFile.open(argv[1]);
+    //sourceFile.open("../test/015_add2.c");
     
     // lexer & parser part of antlr4
     ANTLRInputStream input(sourceFile);
