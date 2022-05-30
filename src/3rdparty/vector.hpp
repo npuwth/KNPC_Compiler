@@ -9,7 +9,7 @@
 #ifndef __KNPC_VECTOR__
 #define __KNPC_VECTOR__
 
-#include "boehmgc.hpp"
+//#include "boehmgc.hpp"
 
 #include <vector>
 
@@ -19,7 +19,7 @@ namespace knpc {
 
 	// Vector (garbage-collectable version)
 	template <typename _T>
-	class Vector : public std::vector<_T, gc_allocator<_T> > {
+	class Vector : public std::vector<_T> {
 	};
 
   }  

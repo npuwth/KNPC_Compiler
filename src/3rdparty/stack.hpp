@@ -9,7 +9,7 @@
 #ifndef __KNPC_STACK__
 #define __KNPC_STACK__
 
-#include "boehmgc.hpp"
+//#include "boehmgc.hpp"
 
 #include <vector>
 #include <stack>
@@ -20,10 +20,10 @@ namespace knpc {
 
 	// Iteratable Stack (garbage-collectable version)
 	template<typename _T>
-	class Stack : public std::stack<_T, std::vector<_T, gc_allocator<_T> > > {
+	class Stack : public std::stack<_T, std::vector<_T> > {
 	  // we use "std::vector" as the underlying container
 	private:
-	  typedef std::vector<_T, gc_allocator<_T> > _Cntner;
+	  typedef std::vector<_T> _Cntner;
 	  typedef std::stack<_T, _Cntner>            _Super;
 	  
 	public:

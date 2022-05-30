@@ -9,7 +9,7 @@
 #ifndef __KNPC_MAP__
 #define __KNPC_MAP__
 
-#include "boehmgc.hpp"
+//#include "boehmgc.hpp"
 
 #include <map>
 
@@ -19,7 +19,7 @@ namespace knpc {
 
 	// Red-black Tree Map (garbage-collectable version)
 	template <typename _K, typename _T, typename _C =std::less<_K> >
-	class TreeMap : public std::map<_K, _T, _C, gc_allocator<_T> > {
+	class TreeMap : public std::map<_K, _T, _C> {
 	};
 
 	// We put the definition of HashMap in 3rdparty/hash.hpp

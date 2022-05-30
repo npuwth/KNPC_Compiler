@@ -74,7 +74,7 @@
 #ifndef __KNPC_SET__
 #define __KNPC_SET__
 
-#include "boehmgc.hpp"
+//#include "boehmgc.hpp"
 
 #include <algorithm>
 

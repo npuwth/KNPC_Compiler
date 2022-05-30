@@ -53,7 +53,7 @@
 #ifndef __KNPC_LIST__
 #define __KNPC_LIST__
 
-#include "boehmgc.hpp"
+//#include "boehmgc.hpp"
 
 #include <list>
 #include <iostream>
@@ -66,7 +66,7 @@ namespace knpc {
 	template <typename _T>
 	class List {
 	private:
-	  typedef std::list<_T, gc_allocator<_T> >  _Cntner;
+	  typedef std::list<_T>  _Cntner;
 	  _Cntner _l;
 	  
 	public:

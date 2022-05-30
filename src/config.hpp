@@ -1,7 +1,7 @@
 #ifndef __KNPC_CONFIG__
 #define __KNPC_CONFIG__
 
-#include "3rdparty/boehmgc.hpp"
+//#include "3rdparty/boehmgc.hpp"
 #include "define.hpp"
 #include "error.hpp"
 

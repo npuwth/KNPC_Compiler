@@ -12,7 +12,7 @@ using namespace knpc;
 
 int main(int argc, char **argv) {
 
-    GC_INIT();
+    //GC_INIT();
 
     // if (argc != 2) {
     //     std::cerr << "[error] Input sourcefile required: ./SysY <sourcefile>\n";
