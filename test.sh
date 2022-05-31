@@ -9,7 +9,7 @@ do
 	$COMPILER ${source_file%.*}.c > ${source_file%.*}.s
 	if [ $? == 0 ];
 	then
-		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static
+		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s -L $TEST_PATH/sylib.a -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static
 		qemu-arm ${source_file%.*}.tmp
 		result=$?
 		answer=$(cat ${source_file%.*}.ans)
