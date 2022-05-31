@@ -29,10 +29,10 @@ do
 		cmp -s ${source_file%.*}.out ${source_file%.*}.ans
 		if [ $? == 0 ];
 		then
-			printf "\e[32m%-20s testcase: %-30s (result: %-10s | answer: %10s).\e[0m\n" "[PASSED]" ${source_file%.*} "$result" "$answer"
+			printf "\e[32m%-20s testcase: %-30s (result: %-10s | answer: %-10s).\e[0m\n" "[PASSED]" ${source_file%.*} "$result" "$answer"
 			passed=$((passed + 1))
 		else
-			printf "\e[31m%-20s testcase: %-30s (result: %-10s | answer: %10s).\e[0m\n" "[WRONG ANSWER]" ${source_file%.*} "$result" "$answer"
+			printf "\e[31m%-20s testcase: %-30s (result: %-10s | answer: %-10s).\e[0m\n" "[WRONG ANSWER]" ${source_file%.*} "$result" "$answer"
 			WA=$((WA + 1))
 		fi
 	else
