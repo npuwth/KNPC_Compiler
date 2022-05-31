@@ -9,11 +9,16 @@ do
 	$COMPILER ${source_file%.*}.c > ${source_file%.*}.s
 	if [ $? == 0 ];
 	then
-		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static
-		qemu-arm ${source_file%.*}.tmp
-		result=$?
-		answer=$(cat ${source_file%.*}.ans)
-		if [ $result == $answer ];
+		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s $TEST_PATH/sylib.c -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static
+		if [ -f ${source_file%.*}.in ];
+		then
+			qemu-arm ${source_file%.*}.tmp < ${source_file%.*}.in > ${source_file%.*}.out
+		else
+			qemu-arm ${source_file%.*}.tmp > ${source_file%.*}.out
+		fi
+		echo $? >> ${source_file%.*}.out
+		cmp -s ${source_file%.*}.out ${source_file%.*}.ans
+		if [ $? == 0 ];
 		then
 			printf "\e[32m%-20s testcase: %-30s (result: %-3d | answer: %3d).\e[0m\n" "[PASSED]" ${source_file%.*} $result $answer
 			passed=$((passed + 1))
