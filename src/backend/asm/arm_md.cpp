@@ -369,7 +369,7 @@ void ArmDesc::emitCallTac(Tac *t) {
     }
     count += liveness->size() * 4;
 
-    addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, std::string("_") + t->op1.label->str_form, EMPTY_STR);
+    addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, t->op1.label->str_form, EMPTY_STR);
     
     //printf("%d\n", r0);
     {
