@@ -12,11 +12,18 @@ do
 		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s $TEST_PATH/sylib.c -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static
 		if [ -f ${source_file%.*}.in ];
 		then
-			qemu-arm ${source_file%.*}.tmp < ${source_file%.*}.in > ${source_file%.*}.out
+			stdout=$(qemu-arm ${source_file%.*}.tmp < ${source_file%.*}.in)
 		else
-			qemu-arm ${source_file%.*}.tmp > ${source_file%.*}.out
+			stdout=$(qemu-arm ${source_file%.*}.tmp)
 		fi
-		echo $? >> ${source_file%.*}.out
+		retval=$?
+		if [ -n "$stdout" ];
+		then
+			echo $stdout > ${source_file%.*}.out
+			echo $retval >> ${source_file%.*}.out
+		else
+			echo $retval > ${source_file%.*}.out
+		fi
 		result=$(cat ${source_file%.*}.out)
 		answer=$(cat ${source_file%.*}.ans)
 		cmp -s ${source_file%.*}.out ${source_file%.*}.ans
