@@ -702,7 +702,7 @@ std::ostream &knpc::operator<<(std::ostream &os, Label l)
     if (l->str_form.empty())
         return (os << "__L" << l->id);
     else
-        return (os << "_" << (l->str_form));
+        return (os << (l->str_form));
 }
 
 /* Outputs a functy object.
