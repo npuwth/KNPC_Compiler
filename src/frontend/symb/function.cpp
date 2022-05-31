@@ -31,6 +31,7 @@ Function::Function(std::string n, Type *resType) {
     name = n;
     order = -1;
     mark = 0;
+    defined_in = NULL;
 
     type = new FuncType(resType);
     associated = new FuncScope(this);

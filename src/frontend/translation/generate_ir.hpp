@@ -85,6 +85,8 @@ class SemPass1 : public SysYBaseVisitor { // total 50
     virtual antlrcpp::Any visitAssignment(SysYParser::AssignmentContext *ctx) override;
     // visit types, 1
     virtual antlrcpp::Any visitBType(SysYParser::BTypeContext *ctx) override;
+    // init 9 runtime library function
+    void initRunTimeLabels();
 };
 
 Piece *runSemPass1(SysYParser::ProgramContext *tree, MachineDesc *md);

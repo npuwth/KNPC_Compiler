@@ -37,7 +37,8 @@ Scope::kind_t GlobalScope::getKind(void) { return GLOBAL; }
  *    s     - the symbol
  */
 void GlobalScope::declare(Symbol *s) {
-    knpc_assert(NULL != s && s->getScope() == NULL);
+    knpc_assert(NULL != s);
+    knpc_assert(s->getScope() == NULL);
 
     Scope::declare(s);
 }

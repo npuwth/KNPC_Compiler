@@ -123,6 +123,15 @@ Label TransHelper::getNewEntryLabel(Function *fn) {
     return l;
 }
 
+Label TransHelper::getNewEntryLabel(std::string name) {
+    Label l = new LabelObject();
+    l->id = label_count++;
+    l->str_form = name;
+    l->target = true; // such label is referenced by virtual tables
+
+    return l;
+}
+
 /* Creates a Memo tac about the function parameters.
  *
  * PARAMETERS:

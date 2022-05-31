@@ -13,10 +13,11 @@
 
 // global tmp value for use in translation(as the ret value of the previous function)
 Type *p_type = NULL;
-std::string p_name = "helloworld";
+std::string p_name = "initial";
 size_t p_unaryOp = 0;
 int order = 0; // used in funcDef
 util::Stack<Temp> tempStack;
+Label runtimeLabels[9];
 
 tac::Label current_break_label;
 tac::Label current_continue_label;
@@ -47,7 +48,20 @@ util::Vector<int> SemPass1::get_array_dims(SysYParser::ConstExpLiContext *ctx) {
     return ret;
 }
 
+void SemPass1::initRunTimeLabels() { // 9 runtime library functions
+    runtimeLabels[0] = tr->getNewEntryLabel("getint");
+    runtimeLabels[1] = tr->getNewEntryLabel("getch");
+    runtimeLabels[2] = tr->getNewEntryLabel("getarray");
+    runtimeLabels[3] = tr->getNewEntryLabel("putint");
+    runtimeLabels[4] = tr->getNewEntryLabel("putch");
+    runtimeLabels[5] = tr->getNewEntryLabel("putarray");
+    runtimeLabels[6] = tr->getNewEntryLabel("putf");
+    runtimeLabels[7] = tr->getNewEntryLabel("starttime");
+    runtimeLabels[8] = tr->getNewEntryLabel("stoptime");
+}
+
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
+    initRunTimeLabels();
     GlobalScope *gscope = new GlobalScope(); // gscope for use
     scopes->open(gscope);
     for(auto it : ctx->compUnit()) {
@@ -209,9 +223,11 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
 
     order = 0;    
     if(ctx->funcFParams()) ctx->funcFParams()->accept(this); // formal params
+
     sym->offset = sym->getOrder()*POINTER_SIZE;
     RESET_OFFSET();
     // TODO: other formal arguments
+    
     tr->startFunc(sym);
     ctx->block()->accept(this);
     if(sym->getResultType()->equal(BaseType::Int)) 
@@ -245,8 +261,9 @@ antlrcpp::Any SemPass1::visitExpLi(SysYParser::ExpLiContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitConstExp(SysYParser::ConstExpContext *ctx) {
-//TODO: need const propagation here
-    return visitChildren(ctx);
+    visitChildren(ctx);
+    knpc_assert(tempStack.top()->isConst);
+    return nullptr;
 }
 
 antlrcpp::Any SemPass1::visitExp(SysYParser::ExpContext *ctx) {
@@ -264,15 +281,15 @@ antlrcpp::Any SemPass1::visitFuncFParams(SysYParser::FuncFParamsContext *ctx) {
 antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     ctx->bType()->accept(this);
     std::string name = ctx->Identifier()->getText();
-    util::Vector<int> dims = get_array_dims(ctx->constExpLi());
-    // dims.insert(dims.begin(), 0); // TODO: first dim length need to be guessed!
     Variable *sym;
-    if(dims.size() == 0) {
-        sym = new Variable(name, p_type);
-    } else {
+    if(ctx->constExpLi()) {
+        util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType);
+    } else {
+        sym = new Variable(name, p_type);
     }
+    // dims.insert(dims.begin(), 0); // TODO: first dim length need to be guessed!
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
@@ -288,7 +305,7 @@ antlrcpp::Any SemPass1::visitFuncRParams(SysYParser::FuncRParamsContext *ctx) {
     for(auto it : ctx->exp()) {
         it->accept(this);
         Temp n = tempStack.top();tempStack.pop();
-        tr->genParam(n);
+        tr->genParam(n); // from left to right, push into stack
     }
     return nullptr;
 }
@@ -533,11 +550,23 @@ antlrcpp::Any SemPass1::visitUnary1(SysYParser::Unary1Context *ctx) {
 
 // TODO: check
 antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
-    visitChildren(ctx);
+    visitChildren(ctx); // 1. set params
     std::string name = ctx->Identifier()->getText();
-    Function *sym = (Function *)(scopes->lookup(name, true));
-    tr->genCall(sym->getEntryLabel());
-    // TODO: call function here. a little complex
+    Temp n;
+    if(name == "getint") {
+        n = tr->genCall(runtimeLabels[0]);
+    } else if(name == "getch") {
+        n = tr->genCall(runtimeLabels[1]);
+    } else if(name == "getarray") {
+        n = tr->genCall(runtimeLabels[2]);
+    } else if(name == "putint") {
+        n = tr->genCall(runtimeLabels[3]);
+    } else {
+        Function *sym = (Function *)(scopes->lookup(name, true));
+        knpc_assert(sym);
+        n = tr->genCall(sym->getEntryLabel()); // 2. call function
+    }
+    tempStack.push(n);
     return nullptr;
 }
 

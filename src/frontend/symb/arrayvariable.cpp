@@ -26,6 +26,7 @@ ArrayVariable::ArrayVariable(std::string n, Type *t) {
     name = n;
     type = t;
     order = -1;
+    defined_in = NULL;
 
     is_parameter = false;
     attached = NULL;
