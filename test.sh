@@ -17,6 +17,8 @@ do
 			qemu-arm ${source_file%.*}.tmp > ${source_file%.*}.out
 		fi
 		echo $? >> ${source_file%.*}.out
+		result=$(cat ${source_file%.*}.out)
+		answer=$(cat ${source_file%.*}.ans)
 		cmp -s ${source_file%.*}.out ${source_file%.*}.ans
 		if [ $? == 0 ];
 		then
