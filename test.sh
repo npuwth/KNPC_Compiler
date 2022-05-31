@@ -6,6 +6,10 @@ CE=0
 WA=0
 for source_file in $(ls $(find $TEST_PATH -name '*.c'))
 do
+	if [ ${source_file%.*} == $TEST_PATH/sylib ];
+	then
+		continue
+	fi
 	$COMPILER ${source_file%.*}.c > ${source_file%.*}.s
 	if [ $? == 0 ];
 	then
