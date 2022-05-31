@@ -689,7 +689,7 @@ public:
   };
 
   MulExpContext* mulExp();
-
+  MulExpContext* mulExp(int precedence);
   class  AddExpContext : public antlr4::ParserRuleContext {
   public:
     AddExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -703,7 +703,7 @@ public:
   };
 
   AddExpContext* addExp();
-
+  AddExpContext* addExp(int precedence);
   class  RelExpContext : public antlr4::ParserRuleContext {
   public:
     RelExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -717,7 +717,7 @@ public:
   };
 
   RelExpContext* relExp();
-
+  RelExpContext* relExp(int precedence);
   class  EqExpContext : public antlr4::ParserRuleContext {
   public:
     EqExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -731,7 +731,7 @@ public:
   };
 
   EqExpContext* eqExp();
-
+  EqExpContext* eqExp(int precedence);
   class  LAndExpContext : public antlr4::ParserRuleContext {
   public:
     LAndExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -745,7 +745,7 @@ public:
   };
 
   LAndExpContext* lAndExp();
-
+  LAndExpContext* lAndExp(int precedence);
   class  LOrExpContext : public antlr4::ParserRuleContext {
   public:
     LOrExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -759,7 +759,7 @@ public:
   };
 
   LOrExpContext* lOrExp();
-
+  LOrExpContext* lOrExp(int precedence);
   class  ConstExpContext : public antlr4::ParserRuleContext {
   public:
     ConstExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -773,6 +773,14 @@ public:
 
   ConstExpContext* constExp();
 
+
+  virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
+  bool mulExpSempred(MulExpContext *_localctx, size_t predicateIndex);
+  bool addExpSempred(AddExpContext *_localctx, size_t predicateIndex);
+  bool relExpSempred(RelExpContext *_localctx, size_t predicateIndex);
+  bool eqExpSempred(EqExpContext *_localctx, size_t predicateIndex);
+  bool lAndExpSempred(LAndExpContext *_localctx, size_t predicateIndex);
+  bool lOrExpSempred(LOrExpContext *_localctx, size_t predicateIndex);
 
 private:
   static std::vector<antlr4::dfa::DFA> _decisionToDFA;

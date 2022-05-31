@@ -110,16 +110,16 @@ unaryOp: '+' | '-' | '!';
 
 funcRParams: exp (',' exp)*;
 
-mulExp: unaryExp (('*' | '/' | '%') mulExp)?;
+mulExp: unaryExp | mulExp ('*' | '/' | '%') unaryExp;
 
-addExp: mulExp (('+' | '-') addExp)?;
+addExp: mulExp | addExp ('+' | '-') mulExp;
 
-relExp: addExp (('<' | '>' | '<=' | '>=') relExp)?;
+relExp: addExp | relExp ('<' | '>' | '<=' | '>=') addExp;
 
-eqExp: relExp (('==' | '!=') eqExp)?;
+eqExp: relExp | eqExp ('==' | '!=') relExp;
 
-lAndExp: eqExp ('&&' lAndExp)?;
+lAndExp: eqExp | lAndExp '&&' eqExp;
 
-lOrExp: lAndExp ('||' lOrExp)?;
+lOrExp: lAndExp | lOrExp '||' lAndExp;
 
 constExp: addExp;

@@ -548,7 +548,6 @@ antlrcpp::Any SemPass1::visitUnary1(SysYParser::Unary1Context *ctx) {
     return visitChildren(ctx);
 }
 
-// TODO: check
 antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
     visitChildren(ctx); // 1. set params
     std::string name = ctx->Identifier()->getText();
@@ -561,6 +560,16 @@ antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
         n = tr->genCall(runtimeLabels[2]);
     } else if(name == "putint") {
         n = tr->genCall(runtimeLabels[3]);
+    } else if(name == "putch") {
+        n = tr->genCall(runtimeLabels[4]);
+    } else if(name == "putarray") {
+        n = tr->genCall(runtimeLabels[5]);
+    } else if(name == "putf") {
+        n = tr->genCall(runtimeLabels[6]);
+    } else if(name == "starttime") {
+        n = tr->genCall(runtimeLabels[7]);
+    } else if(name == "stoptime") {
+        n = tr->genCall(runtimeLabels[8]);
     } else {
         Function *sym = (Function *)(scopes->lookup(name, true));
         knpc_assert(sym);
@@ -604,8 +613,8 @@ antlrcpp::Any SemPass1::visitUnaryOp(SysYParser::UnaryOpContext *ctx) {
 antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
     Temp n;
     if(ctx->mulExp()) {
-        ctx->unaryExp()->accept(this);
         ctx->mulExp()->accept(this);
+        ctx->unaryExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(ctx->children[1]->getText()[0] == '*') {
@@ -631,8 +640,8 @@ antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
 antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
     Temp n;
     if(ctx->addExp()) {
-        ctx->mulExp()->accept(this);
         ctx->addExp()->accept(this);
+        ctx->mulExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(ctx->children[1]->getText()[0] == '+') {
@@ -655,8 +664,8 @@ antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
 antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
     Temp n;
     if(ctx->relExp()) {
-        ctx->addExp()->accept(this);
         ctx->relExp()->accept(this);
+        ctx->addExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(ctx->children[1]->getText()[0] == '<') { // <
@@ -678,8 +687,8 @@ antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
 antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
     Temp n;
     if(ctx->eqExp()) {
-        ctx->relExp()->accept(this);
         ctx->eqExp()->accept(this);
+        ctx->relExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(ctx->children[1]->getText()[0] == '=') {
@@ -697,14 +706,19 @@ antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
 }
 
 // LAnd, LOr, LNot: "L" means "Logic"
-antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) { // TODO: 短路求值
+antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) {
     Temp n;
     if(ctx->lAndExp()) {
-        ctx->eqExp()->accept(this);
-        ctx->lAndExp()->accept(this);
-        Temp r = tempStack.top();tempStack.pop();
+        ctx->lAndExp()->accept(this); // compute lreg
         Temp l = tempStack.top();tempStack.pop();
-        n = tr->genLAnd(l, r);
+        Label label = tr->getNewLabel();
+        tr->genJumpOnZero(label, l); // if left val false, jump
+        ctx->eqExp()->accept(this); // compute rreg
+        Temp r = tempStack.top();tempStack.pop();
+        n = tr->genLAnd(l, r); // get "and" result use lreg, rreg
+        tr->genAssign(l, n);   // assign result to lreg
+        tr->genMarkLabel(label);
+        n = l; // return lreg
     } else {
         ctx->eqExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
@@ -714,14 +728,20 @@ antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) { // TODO:
     return nullptr;
 }
 
-antlrcpp::Any SemPass1::visitLOrExp(SysYParser::LOrExpContext *ctx) { // TODO: 短路求值
+antlrcpp::Any SemPass1::visitLOrExp(SysYParser::LOrExpContext *ctx) {
     Temp n;
     if(ctx->lOrExp()) {
-        ctx->lAndExp()->accept(this);
         ctx->lOrExp()->accept(this);
-        Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
+        Label label = tr->getNewLabel();
+        Temp nl = tr->genLNot(l);
+        tr->genJumpOnZero(label, nl);
+        ctx->lAndExp()->accept(this);
+        Temp r = tempStack.top();tempStack.pop();
         n = tr->genLOr(l, r);
+        tr->genAssign(l, n);
+        tr->genMarkLabel(label);
+        n = l;
     } else {
         ctx->lAndExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
