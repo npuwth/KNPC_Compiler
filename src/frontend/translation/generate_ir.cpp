@@ -221,12 +221,11 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     scopes->declare(sym);
     scopes->open(sym->getAssociatedScope());
 
+    RESET_OFFSET();
     order = 0;    
     if(ctx->funcFParams()) ctx->funcFParams()->accept(this); // formal params
 
     sym->offset = sym->getOrder()*POINTER_SIZE;
-    RESET_OFFSET();
-    // TODO: other formal arguments
     
     tr->startFunc(sym);
     ctx->block()->accept(this);
@@ -297,6 +296,8 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     scopes->declare(sym);
     sym->setOrder(order++);
     sym->attachTemp(tr->allocNewTempI4(sym->getType()->getSize()));
+    sym->offset = NEXT_OFFSET(sym->getTemp()->size);
+    sym->setParameter();
     return nullptr;
 }
 
