@@ -170,7 +170,7 @@ ArmInstr *ArmDesc::prepareSingleChain(BasicBlock *b, FlowGraph *g) {
         r0 = getRegForRead(b->var, 0, b->LiveOut);
         spillDirtyRegs(b->LiveOut);
         // uses "branch if equal to zero" instruction
-        addInstr(ArmInstr::TEQZ, _reg[r0], NULL, NULL, 0,
+        addInstr(ArmInstr::TEQZ, NULL, _reg[r0], NULL, 0,
                  std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
         addInstr(ArmInstr::BEQ, NULL, NULL, NULL, 0,
                  std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
@@ -627,7 +627,7 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         break;
 
     case ArmInstr::TEQZ:
-        oss << "teq" << i->r0->name << ", #0";
+        oss << "teq" << i->r1->name << ", #0";
         break;
     
     case ArmInstr::SEQ:
