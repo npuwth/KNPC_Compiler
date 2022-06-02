@@ -155,7 +155,7 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) { // TOD
         //TODO: array init to do
         util::Vector initVals = get_array_initVals(ctx->constInitVal(), dims);
         if(sym->isGlobalVar()) {
-            tr->genGlobalVarible(name, initVals, sym->getType()->getSize(), true);
+            // tr->genGlobalVarible(name, initVals, sym->getType()->getSize(), true);
         } else {
             Temp arr = tr->allocNewTempI4(sym->getType()->getSize());
 
