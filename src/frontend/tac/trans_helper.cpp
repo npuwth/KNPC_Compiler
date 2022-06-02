@@ -206,13 +206,14 @@ void TransHelper::endFunc(void) {
     current = NULL;
 }
 
-void TransHelper::genGlobalVarible(std::string name, int value, int size) {
+void TransHelper::genGlobalVarible(std::string name, int value, int size, bool isConst) {
     ptail = ptail->next = new Piece();
     ptail->kind = Piece::GLOBAL;
     ptail->as.globalVar = new GlobalObject();
     ptail->as.globalVar->name = name;
     ptail->as.globalVar->value = value;
     ptail->as.globalVar->size = size;
+    ptail->as.globalVar->isConst = isConst;
 }
 
 /* Appends an Add tac node to the current list.
@@ -511,6 +512,8 @@ void TransHelper::genAssign(Temp dest, Temp src) {
  */
 Temp TransHelper::genLoadImm4(int value) {
     Temp c = getNewTempI4();
+    c->isConst = true;
+    c->ctval = value;
     chainUp(Tac::LoadImm4(c, value));
     return c;
 }

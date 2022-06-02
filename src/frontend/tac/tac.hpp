@@ -35,6 +35,7 @@ namespace tac{
         std::string name;   //全局变量名
         int value;          //全局变量值
         int size;           //所占大小
+        bool isConst;       //是否常量
     } * GlobalVar;
 
     struct Tac

@@ -41,7 +41,7 @@ class TransHelper {
     // ends translating a function
     void endFunc(void);
 
-    void genGlobalVarible(std::string, int, int);
+    void genGlobalVarible(std::string, int, int, bool);
 
     // Arithmetic
     Temp genAdd(Temp, Temp);
