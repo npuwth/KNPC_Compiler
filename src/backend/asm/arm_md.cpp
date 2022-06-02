@@ -627,7 +627,7 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         break;
 
     case ArmInstr::TEQZ:
-        oss << "teq" << i->r0->name << ", #0";
+        oss << "teq" << i->r1->name << ", #0";
         break;
     
     case ArmInstr::SEQ:
