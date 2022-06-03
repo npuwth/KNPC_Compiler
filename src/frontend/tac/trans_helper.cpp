@@ -146,6 +146,13 @@ Tac *TransHelper::memoOf(Function *f) {
     std::ostringstream oss;
     FuncScope *scope = f->getAssociatedScope();
 
+    int cnt = 0;
+    for (Scope::iterator it = scope->begin(); it != scope->end(); ++it) {
+        Variable *v = (Variable *)*it;
+        if (v->isParameter()) {
+            cnt++;
+        }
+    }
     for (Scope::iterator it = scope->begin(); it != scope->end(); ++it) {
         Variable *v = (Variable *)*it;
 
@@ -153,15 +160,21 @@ Tac *TransHelper::memoOf(Function *f) {
             Temp t = v->getTemp();
 
             knpc_assert(NULL != t); // it should have been created in TransPass1
-
-            t->offset = v->offset;
-            t->is_offset_fixed = true;
-            oss << t << ":" << t->offset << " ";
+            if (cnt > 0) {
+                t->reg = cnt;
+                oss << t << ": A" << t->reg << " ";
+            } else {
+                t->offset = v->offset;
+                t->is_offset_fixed = true;
+                oss << t << ": " << t->offset << " ";
+            }
+            cnt--;
         }
     }
 
     int length = oss.str().size();
     char *memo = new char[length + 1];
+    *memo = '\0'; // Or memo may be uninitialized.
     oss.str().copy(memo, length);
 
     return (Tac::Memo(memo));
