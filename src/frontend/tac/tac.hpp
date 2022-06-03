@@ -14,6 +14,7 @@ namespace tac{
         int offset;           // FP寄存器的偏移量
         int ctval;            // 编译时刻的静态值
         bool isConst;         // 是否常量
+        int reg;
     } * Temp;
 
     typedef struct LabelObject

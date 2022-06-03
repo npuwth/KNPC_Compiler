@@ -170,7 +170,7 @@ ArmInstr *ArmDesc::prepareSingleChain(BasicBlock *b, FlowGraph *g) {
         r0 = getRegForRead(b->var, 0, b->LiveOut);
         spillDirtyRegs(b->LiveOut);
         // uses "branch if equal to zero" instruction
-        addInstr(ArmInstr::TEQZ, _reg[r0], NULL, NULL, 0,
+        addInstr(ArmInstr::TEQZ, NULL, _reg[r0], NULL, 0,
                  std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
         addInstr(ArmInstr::BEQ, NULL, NULL, NULL, 0,
                  std::string(g->getBlock(b->next[0])->entry_label), EMPTY_STR);
@@ -366,7 +366,11 @@ void ArmDesc::emitCallTac(Tac *t) {
         for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev){
             cnt -= 4;
             int r1 = getRegForRead(it->op0.var, 0, it->LiveOut);
-            addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
+            if (cnt <= 16) {
+                addInstr(ArmInstr::MV,  _reg[cnt >> 2], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
+            } else {
+                addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
+            }
         }
     }
     count += liveness->size() * 4;
@@ -854,6 +858,14 @@ void ArmDesc::simplePeephole(ArmInstr *iseq) {
 int ArmDesc::getRegForRead(Temp v, int avoid1, LiveSet *live) {
     std::ostringstream oss;
 
+    if (v->reg) {
+        int reg_idx = v->reg - 1;
+        spillReg(reg_idx, live);
+        _reg[reg_idx]->var = v;
+        v->reg = 0;
+        return reg_idx;
+    }
+
     int i = lookupReg(v);
 
     if (i < 0) {
@@ -955,7 +967,7 @@ void ArmDesc::spillReg(int i, LiveSet *live) {
 void ArmDesc::spillDirtyRegs(LiveSet *live) {
     int i;
     // determines whether we should spill the registers
-    for (i = 0; i < ArmReg::TOTAL_NUM; ++i) {
+    for (i = 4; i < ArmReg::TOTAL_NUM; ++i) {
         if ((NULL != _reg[i]->var) && _reg[i]->dirty &&
             live->contains(_reg[i]->var))
             break;
@@ -982,7 +994,7 @@ void ArmDesc::spillDirtyRegs(LiveSet *live) {
  */
 int ArmDesc::lookupReg(tac::Temp v) {
     for (int i = 0; i < ArmReg::TOTAL_NUM; ++i)
-        if (_reg[i]->general && _reg[i]->var == v)
+        if (( v != NULL || _reg[i]->general) && _reg[i]->var == v)
             return i;
 
     return -1;
