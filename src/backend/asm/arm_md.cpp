@@ -345,13 +345,15 @@ void ArmDesc::emitTac(Tac *t) {
 
 void ArmDesc::emitCallTac(Tac *t) {
 
+    Tac *first_tac_before_param = t->prev ? t->prev : t;
+    for(; first_tac_before_param->prev != NULL && first_tac_before_param->op_code == Tac::PARAM; first_tac_before_param = first_tac_before_param->prev) ;
     Set<Temp>* liveness = t->LiveOut->clone();
 
     {
         int cnt = 0;
         for(auto temp : *liveness){
             cnt -= 4;
-            int r1 = getRegForRead(temp, 0, t->LiveOut);
+            int r1 = getRegForRead(temp, 0, first_tac_before_param->LiveOut);
             addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
         }
         addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
