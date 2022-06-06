@@ -23,7 +23,7 @@ do
 		retval=$?
 		if [ -n "$stdout" ];
 		then
-			echo $stdout > ${source_file%.*}.out
+			echo -e "$stdout" > ${source_file%.*}.out
 			echo $retval >> ${source_file%.*}.out
 		else
 			echo $retval > ${source_file%.*}.out
