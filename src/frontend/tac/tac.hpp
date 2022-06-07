@@ -151,7 +151,8 @@ namespace tac{
         enum
         {
             FUNCTY,
-            GLOBAL
+            GLOBAL,
+            GLOARR
         } kind;
 
         // data of this Piece node

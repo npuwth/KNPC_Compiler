@@ -238,7 +238,7 @@ void TransHelper::genGlobalVarible(std::string name, int value, int size, bool i
 
 void TransHelper::genGlobalArray(std::string name, util::Vector<int> values, int size, bool isConst) {
     ptail = ptail->next = new Piece();
-    ptail->kind = Piece::GLOBAL;
+    ptail->kind = Piece::GLOARR;
     ptail->as.globalArr = new GlobalArray();
     ptail->as.globalArr->name = name;
     ptail->as.globalArr->values = values;

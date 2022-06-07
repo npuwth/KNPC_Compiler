@@ -119,6 +119,24 @@ void ArmDesc::emitPieces(scope::GlobalScope *gscope, Piece *ps,
             else emit(EMPTY_STR, ((std::string)(".zero ") + std::to_string(ps->as.globalVar->size)).c_str(), NULL);
             break;
 
+        case Piece::GLOARR:
+            if(ps->as.globalArr->values.size() > 0) {
+                emit(EMPTY_STR, ".data", NULL);
+                emit(EMPTY_STR, ((std::string)(".global ") + ps->as.globalArr->name).c_str(), NULL);
+                emit(EMPTY_STR, ((std::string)(".size ") + ps->as.globalArr->name + (std::string)(", ") + std::to_string(ps->as.globalArr->size)).c_str(), NULL);
+                emit(ps->as.globalArr->name.c_str(), NULL, NULL);
+                for(size_t i = 0; i < ps->as.globalArr->values.size(); i++) {
+                    emit(EMPTY_STR, ((std::string)(".word ") + std::to_string(ps->as.globalArr->values[i])).c_str(), NULL);
+                }
+            } else {
+                emit(EMPTY_STR, ".bss", NULL);
+                emit(EMPTY_STR, ((std::string)(".global ") + ps->as.globalArr->name).c_str(), NULL);
+                emit(EMPTY_STR, ((std::string)(".size ") + ps->as.globalArr->name + (std::string)(", ") + std::to_string(ps->as.globalArr->size)).c_str(), NULL);
+                emit(ps->as.globalArr->name.c_str(), NULL, NULL);
+                emit(EMPTY_STR, ((std::string)(".space ") + std::to_string(ps->as.globalArr->size)).c_str(), NULL);
+            }
+            break;
+
         default:
             knpc_assert(false); // unreachable
             break;

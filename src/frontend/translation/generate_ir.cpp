@@ -260,14 +260,18 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
             }
             util::Vector<Temp> initVals = get_array_initVals(ctx->initVal(), dims, dimSize, 0);
             if(sym->isGlobalVar()) {                               // 2.1 arraytype && global
-                util::Vector<int> p;                           
-                tr->genGlobalArray(name, p, sym->getType()->getSize(), false); 
-                Temp n = tr->genLoadSymbol(name);
-                int offset = 0;
-                for(Temp initVal : initVals) {
-                    tr->genStore(initVal, n, offset);
-                    offset += 4;
+                util::Vector<int> vals;
+                for(size_t i = 0; i < initVals.size(); i++) {
+                    knpc_assert(initVals[i]->isConst);
+                    vals.push_back(initVals[i]->ctval);
                 }
+                tr->genGlobalArray(name, vals, sym->getType()->getSize(), false); 
+                // Temp n = tr->genLoadSymbol(name);
+                // int offset = 0;
+                // for(Temp initVal : initVals) {
+                //     tr->genStore(initVal, n, offset);
+                //     offset += 4;
+                // }
             } else {                                               // 2.2 arraytype && local
                 Temp arr = tr->allocNewTempI4(sym->getType()->getSize());
                 sym->attachTemp(arr);
@@ -287,7 +291,6 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
             }
         } else {                                                    // 2 array type
             if(sym->isGlobalVar()) {                                // 2.1 arraytype && global
-                // TODO: bss all zero initVal is 0
                 util::Vector<int> p; // p is empty
                 tr->genGlobalArray(name, p, sym->getType()->getSize(), false); // initVal is 0
             } else {                                                // 2.2 arraytype && local
@@ -376,6 +379,11 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     if(ctx->constExpLi()) {
         util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         dims.insert(dims.begin(), 0); // first dim length can be assigned as 0, won't influence correctness in assign stmt.
+        Type *arrayType = new ArrayType(p_type, dims);
+        sym = new Variable(name, arrayType);
+    } else if(ctx->children[3]->getText()[0] == '[') {
+        util::Vector<int> dims;
+        dims.push_back(0);
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType);
     } else {
@@ -561,34 +569,46 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
         n = tr->genLoadSymbol(p_name);
         bool isConst = n->isConst;
         if(sym->getType()->isArrayType()) {
-            int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
-            for(int it = c_type->getLength().size() - 1;
-            it >= 0; it--) {
-                x = tr->genLoadImm4(c_dim);
+            util::Vector<int> dimSize;
+            util::Vector<int> dims = c_type->getLength();
+            int c_dim = 4;
+            for(auto it = dims.rbegin();
+            it != dims.rend(); it++) {
+                dimSize.insert(dimSize.begin(), c_dim);
+                c_dim = c_dim * (*it); 
+            }
+            for(size_t i = 0; i < r_dim; i++) {
+                x = tr->genLoadImm4(dimSize[i]);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
-                c_dim = c_dim*(c_type->getLength()[it]);
             }
+            if(r_dim == c_type->getLength().size()) n = tr->genLoad(n, 0); // only dim equal should load data
+        } else {
+            n = tr->genLoad(n, 0);
         }
-        n = tr->genLoad(n, 0);
         n->isConst = isConst;
     } else {
         n = sym->getTemp();
         bool isConst = n->isConst;
         if(sym->getType()->isArrayType()) {
-            int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
-            for(int it = c_type->getLength().size() - 1;
-            it >= 0; it--) {
-                x = tr->genLoadImm4(c_dim);
+            util::Vector<int> dimSize;
+            util::Vector<int> dims = c_type->getLength();
+            int c_dim = 4;
+            for(auto it = dims.rbegin();
+            it != dims.rend(); it++) {
+                dimSize.insert(dimSize.begin(), c_dim);
+                c_dim = c_dim * (*it); 
+            }
+            for(size_t i = 0; i < r_dim; i++) {
+                x = tr->genLoadImm4(dimSize[i]);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
-                c_dim = c_dim*(c_type->getLength()[it]);
             }
-            n = tr->genLoad(n, 0);
+            if(r_dim == c_type->getLength().size()) n = tr->genLoad(n, 0); // only dim equal should load data
         }
         n->isConst = isConst;
     }
