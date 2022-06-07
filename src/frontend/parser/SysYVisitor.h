@@ -35,8 +35,6 @@ public:
 
     virtual antlrcpp::Any visitConstInitVal(SysYParser::ConstInitValContext *context) = 0;
 
-    virtual antlrcpp::Any visitConstInitValLi(SysYParser::ConstInitValLiContext *context) = 0;
-
     virtual antlrcpp::Any visitConstExpLi(SysYParser::ConstExpLiContext *context) = 0;
 
     virtual antlrcpp::Any visitVarDecl(SysYParser::VarDeclContext *context) = 0;
@@ -46,8 +44,6 @@ public:
     virtual antlrcpp::Any visitVarDef(SysYParser::VarDefContext *context) = 0;
 
     virtual antlrcpp::Any visitInitVal(SysYParser::InitValContext *context) = 0;
-
-    virtual antlrcpp::Any visitInitValLi(SysYParser::InitValLiContext *context) = 0;
 
     virtual antlrcpp::Any visitFuncDef(SysYParser::FuncDefContext *context) = 0;
 

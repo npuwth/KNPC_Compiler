@@ -24,14 +24,13 @@ public:
   enum {
     RuleProgram = 0, RuleCompUnit = 1, RuleDecl = 2, RuleConstDecl = 3, 
     RuleBType = 4, RuleConstDefLi = 5, RuleConstDef = 6, RuleConstInitVal = 7, 
-    RuleConstInitValLi = 8, RuleConstExpLi = 9, RuleVarDecl = 10, RuleVarDefLi = 11, 
-    RuleVarDef = 12, RuleInitVal = 13, RuleInitValLi = 14, RuleFuncDef = 15, 
-    RuleFuncType = 16, RuleFuncFParams = 17, RuleFuncFParam = 18, RuleExpLi = 19, 
-    RuleBlock = 20, RuleBlockItemLi = 21, RuleBlockItem = 22, RuleStmt = 23, 
-    RuleExp = 24, RuleCond = 25, RuleLVal = 26, RulePrimaryExp = 27, RuleNumber = 28, 
-    RuleUnaryExp = 29, RuleUnaryOp = 30, RuleFuncRParams = 31, RuleMulExp = 32, 
-    RuleAddExp = 33, RuleRelExp = 34, RuleEqExp = 35, RuleLAndExp = 36, 
-    RuleLOrExp = 37, RuleConstExp = 38
+    RuleConstExpLi = 8, RuleVarDecl = 9, RuleVarDefLi = 10, RuleVarDef = 11, 
+    RuleInitVal = 12, RuleFuncDef = 13, RuleFuncType = 14, RuleFuncFParams = 15, 
+    RuleFuncFParam = 16, RuleExpLi = 17, RuleBlock = 18, RuleBlockItemLi = 19, 
+    RuleBlockItem = 20, RuleStmt = 21, RuleExp = 22, RuleCond = 23, RuleLVal = 24, 
+    RulePrimaryExp = 25, RuleNumber = 26, RuleUnaryExp = 27, RuleUnaryOp = 28, 
+    RuleFuncRParams = 29, RuleMulExp = 30, RuleAddExp = 31, RuleRelExp = 32, 
+    RuleEqExp = 33, RuleLAndExp = 34, RuleLOrExp = 35, RuleConstExp = 36
   };
 
   SysYParser(antlr4::TokenStream *input);
@@ -52,13 +51,11 @@ public:
   class ConstDefLiContext;
   class ConstDefContext;
   class ConstInitValContext;
-  class ConstInitValLiContext;
   class ConstExpLiContext;
   class VarDeclContext;
   class VarDefLiContext;
   class VarDefContext;
   class InitValContext;
-  class InitValLiContext;
   class FuncDefContext;
   class FuncTypeContext;
   class FuncFParamsContext;
@@ -191,19 +188,6 @@ public:
     ConstInitValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ConstExpContext *constExp();
-    ConstInitValLiContext *constInitValLi();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  ConstInitValContext* constInitVal();
-
-  class  ConstInitValLiContext : public antlr4::ParserRuleContext {
-  public:
-    ConstInitValLiContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
     std::vector<ConstInitValContext *> constInitVal();
     ConstInitValContext* constInitVal(size_t i);
 
@@ -212,7 +196,7 @@ public:
    
   };
 
-  ConstInitValLiContext* constInitValLi();
+  ConstInitValContext* constInitVal();
 
   class  ConstExpLiContext : public antlr4::ParserRuleContext {
   public:
@@ -276,19 +260,6 @@ public:
     InitValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ExpContext *exp();
-    InitValLiContext *initValLi();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  InitValContext* initVal();
-
-  class  InitValLiContext : public antlr4::ParserRuleContext {
-  public:
-    InitValLiContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
     std::vector<InitValContext *> initVal();
     InitValContext* initVal(size_t i);
 
@@ -297,7 +268,7 @@ public:
    
   };
 
-  InitValLiContext* initValLi();
+  InitValContext* initVal();
 
   class  FuncDefContext : public antlr4::ParserRuleContext {
   public:

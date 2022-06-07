@@ -82,6 +82,13 @@ Temp TransHelper::getNewTempI4(void) {
     return v;
 }
 
+/* Allocates a new temporary int32 pointer.
+ *
+ * RETURNS:
+ *   the newly created temporary pointer
+ * NOTE:
+ *   we use the variable index to avoid name crash.
+ */
 Temp TransHelper::allocNewTempI4(int size) {
     Temp v = getNewTempI4();
     chainUp(Tac::Alloc(v, size));
@@ -227,6 +234,16 @@ void TransHelper::genGlobalVarible(std::string name, int value, int size, bool i
     ptail->as.globalVar->value = value;
     ptail->as.globalVar->size = size;
     ptail->as.globalVar->isConst = isConst;
+}
+
+void TransHelper::genGlobalArray(std::string name, util::Vector<int> values, int size, bool isConst) {
+    ptail = ptail->next = new Piece();
+    ptail->kind = Piece::GLOBAL;
+    ptail->as.globalArr = new GlobalArray();
+    ptail->as.globalArr->name = name;
+    ptail->as.globalArr->values = values;
+    ptail->as.globalArr->size = size;
+    ptail->as.globalArr->isConst = isConst;
 }
 
 /* Appends an Add tac node to the current list.

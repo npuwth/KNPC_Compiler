@@ -43,9 +43,7 @@ constDefLi: constDef (',' constDef)*;
 
 constDef: Identifier constExpLi? '=' constInitVal;
 
-constInitVal: constExp | '{' constInitValLi? '}';
-
-constInitValLi: constInitVal (',' constInitVal)*;
+constInitVal: constExp | '{' (constInitVal (',' constInitVal)*)? '}';
 
 constExpLi: ('[' constExp ']')+;
 
@@ -55,9 +53,7 @@ varDefLi: varDef (',' varDef)*;
 
 varDef: Identifier constExpLi? | Identifier constExpLi? ('=' initVal)?;
 
-initVal: exp | '{' initValLi? '}';
-
-initValLi: initVal (',' initVal)*;
+initVal: exp | '{' (initVal (',' initVal)*)? '}';
 
 funcDef: funcType Identifier '(' funcFParams? ')' block;
 

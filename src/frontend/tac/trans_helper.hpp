@@ -42,6 +42,7 @@ class TransHelper {
     void endFunc(void);
 
     void genGlobalVarible(std::string, int, int, bool);
+    void genGlobalArray(std::string, util::Vector<int>, int, bool);
 
     // Arithmetic
     Temp genAdd(Temp, Temp);

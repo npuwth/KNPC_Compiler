@@ -47,10 +47,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitConstInitValLi(SysYParser::ConstInitValLiContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual antlrcpp::Any visitConstExpLi(SysYParser::ConstExpLiContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -68,10 +64,6 @@ public:
   }
 
   virtual antlrcpp::Any visitInitVal(SysYParser::InitValContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitInitValLi(SysYParser::InitValLiContext *ctx) override {
     return visitChildren(ctx);
   }
 

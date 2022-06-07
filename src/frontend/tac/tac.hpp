@@ -3,6 +3,7 @@
 #include <iostream>
 #include  "define.hpp"
 #include "3rdparty/set.hpp"
+#include "3rdparty/vector.hpp"
 namespace knpc{
 #define KNPC_TAC_DEFINED
 namespace tac{
@@ -38,6 +39,14 @@ namespace tac{
         int size;           //所占大小
         bool isConst;       //是否常量
     } * GlobalVar;
+
+    typedef struct GlobalArray
+    {
+        std::string name;   //全局变量名
+        util::Vector<int> values;//全局变量值
+        int size;           //所占大小
+        bool isConst;       //是否常量
+    } * GlobalArr;
 
     struct Tac
     {
@@ -150,6 +159,7 @@ namespace tac{
         {
             Functy functy;
             GlobalVar globalVar;
+            GlobalArr globalArr;
         } as;
 
         // 下一个块指针
