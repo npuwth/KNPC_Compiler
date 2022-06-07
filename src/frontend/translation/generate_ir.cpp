@@ -76,9 +76,27 @@ util::Vector<int> SemPass1::get_array_constInitVals(SysYParser::ConstInitValCont
     return ret;
 }
 
-void SemPass1::set_array_initVals(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d) {
-    util::Vector<int> ret;
-    // TODO:
+util::Vector<Temp> SemPass1::get_array_initVals(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d) {
+    util::Vector<Temp> ret;
+    if(ctx->exp()) {
+        ctx->exp()->accept(this);
+        Temp n = tempStack.top();tempStack.pop();
+        ret.push_back(n);
+    } else {
+        for(auto it : ctx->initVal()) {
+            util::Vector<Temp> temp = get_array_initVals(it, dims, dimSize, d + 1); // dfs
+            for(size_t i = 0; i < temp.size(); i++) {
+                ret.push_back(temp[i]);
+            }
+        }
+        int j = ret.size();
+        while(j < dims[d] * dimSize[d]) { // pad zero in a { }
+            Temp imm = tr->genLoadImm4(0);
+            ret.push_back(imm);
+            j++;
+        }
+    }
+    return ret;
 }
 
 void SemPass1::initRunTimeLabels() { // 9 runtime library functions
@@ -222,18 +240,17 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
-    if(ctx->initVal()) {
-        if(sym->getType()->isBaseType()) {
+    if(ctx->initVal()) {                                           // has initVal
+        if(sym->getType()->isBaseType()) {                         // 1 base type
             ctx->initVal()->accept(this);
             Temp n = tempStack.top();tempStack.pop();
-            if(sym->isGlobalVar()) {
+            if(sym->isGlobalVar()) {                               // 1.1 basetype && global
                 tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), false);
-            } else {
+            } else {                                               // 1.2 basetype && local
                 sym->attachTemp(tr->getNewTempI4()); // get local object then assign
                 tr->genAssign(sym->getTemp(), n);
             }
-        } else {
-            //TODO: array init to do
+        } else {                                                   // 2 array type
             util::Vector<int> dimSize;
             int c_dim = 1;
             for(auto it = dims.rbegin();
@@ -241,32 +258,39 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
                 dimSize.insert(dimSize.begin(), c_dim);
                 c_dim = c_dim * (*it); 
             }
-            set_array_initVals(ctx->initVal(), dims, dimSize, 0); // here has problem, initVal not const
-            if(sym->isGlobalVar()) {
-                // tr->genGlobalArray(name, initVals, sym->getType()->getSize(), false); 
-            } else {
+            util::Vector<Temp> initVals = get_array_initVals(ctx->initVal(), dims, dimSize, 0);
+            if(sym->isGlobalVar()) {                               // 2.1 arraytype && global
+                util::Vector<int> p;                           
+                tr->genGlobalArray(name, p, sym->getType()->getSize(), false); 
+                Temp n = tr->genLoadSymbol(name);
                 int offset = 0;
+                for(Temp initVal : initVals) {
+                    tr->genStore(initVal, n, offset);
+                    offset += 4;
+                }
+            } else {                                               // 2.2 arraytype && local
                 Temp arr = tr->allocNewTempI4(sym->getType()->getSize());
                 sym->attachTemp(arr);
-                // for(int initVal : initVals) {
-                //     Temp x = tr->genLoadImm4(initVal);
-                //     tr->genStore(x, arr, offset);
-                //     offset += 4;
-                // }
+                int offset = 0;
+                for(Temp initVal : initVals) {
+                    tr->genStore(initVal, arr, offset);
+                    offset += 4;
+                }
             }
         }
-    } else { // no init val
-        if(sym->getType()->isBaseType()) {
-            if(sym->isGlobalVar()) {
+    } else {                                                        // no init val
+        if(sym->getType()->isBaseType()) {                          // 1 base type
+            if(sym->isGlobalVar()) {                                // 1.1 basetype && global
                 tr->genGlobalVarible(name, 0, sym->getType()->getSize(), false); // initVal is 0
-            } else {
+            } else {                                                // 1.2 basetype && local
                 sym->attachTemp(tr->getNewTempI4());
             }
-        } else {
-            //TODO: array to do here
-            if(sym->isGlobalVar()) {
+        } else {                                                    // 2 array type
+            if(sym->isGlobalVar()) {                                // 2.1 arraytype && global
                 // TODO: bss all zero initVal is 0
-            } else {
+                util::Vector<int> p; // p is empty
+                tr->genGlobalArray(name, p, sym->getType()->getSize(), false); // initVal is 0
+            } else {                                                // 2.2 arraytype && local
                 sym->attachTemp(tr->allocNewTempI4(sym->getType()->getSize()));
             }
         }
@@ -530,7 +554,7 @@ antlrcpp::Any SemPass1::visitPrimary1(SysYParser::Primary1Context *ctx) {
 
 // TODO: check
 antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
-    size_t r_dim = ctx->lVal()->accept(this);
+    size_t r_dim = ctx->lVal()->accept(this); // TODO: not always r_dim == array dim
     Temp n;
     Variable *sym = (Variable *)(scopes->lookup(p_name, true));
     if(sym->isGlobalVar()) {

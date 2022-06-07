@@ -41,7 +41,7 @@ class SemPass1 : public SysYBaseVisitor { // total 50
     virtual antlrcpp::Any visitVarDef(SysYParser::VarDefContext *ctx) override;    
     util::Vector<int> get_array_dims(SysYParser::ConstExpLiContext *ctx);
     util::Vector<int> get_array_constInitVals(SysYParser::ConstInitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);    
-    void set_array_initVals(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);
+    util::Vector<Temp> get_array_initVals(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);
     virtual antlrcpp::Any visitConstInitVal(SysYParser::ConstInitValContext *ctx) override;
     virtual antlrcpp::Any visitInitVal(SysYParser::InitValContext *ctx) override;
     // visit expressions, 20
