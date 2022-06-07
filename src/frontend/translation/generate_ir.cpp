@@ -7,6 +7,7 @@
  */
 
 #include "generate_ir.hpp"
+// #define debug_on
 
 #define RESET_OFFSET() tr->getOffsetCounter()->reset(OffsetCounter::PARAMETER)
 #define NEXT_OFFSET(x) tr->getOffsetCounter()->next(OffsetCounter::PARAMETER, x)
@@ -45,17 +46,39 @@ util::Vector<int> SemPass1::get_array_dims(SysYParser::ConstExpLiContext *ctx) {
         if(i < 0) throw ZeroLengthedArrayError();
         ret.push_back(cur);
     }
+    #ifdef debug_on
+    printf("array dims are: "); // debug
+    for(size_t i = 0; i < ret.size(); i++) printf("%d ", ret[i]); // debug
+    #endif
     return ret;
 }
 
 util::Vector<int> SemPass1::get_array_constInitVals(SysYParser::ConstInitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d) {
     util::Vector<int> ret;
+    if(ctx->constExp()) {
+        ctx->constExp()->accept(this);
+        Temp n = tempStack.top();tempStack.pop();
+        knpc_assert(n->isConst);
+        ret.push_back(n->ctval);
+    } else {
+        for(auto it : ctx->constInitVal()) {
+            util::Vector<int> temp = get_array_constInitVals(it, dims, dimSize, d + 1); // dfs
+            for(size_t i = 0; i < temp.size(); i++) {
+                ret.push_back(temp[i]);
+            }
+        }
+        int j = ret.size();
+        while(j < dims[d] * dimSize[d]) { // pad zero in a { }
+            ret.push_back(0);
+            j++;
+        }
+    }
     return ret;
 }
 
 void SemPass1::set_array_initVals(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d) {
     util::Vector<int> ret;
-
+    // TODO:
 }
 
 void SemPass1::initRunTimeLabels() { // 9 runtime library functions
@@ -120,7 +143,6 @@ antlrcpp::Any SemPass1::visitVarDefLi(SysYParser::VarDefLiContext *ctx) {
     return nullptr;
 }
 
-// TODO: check
 antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
@@ -158,6 +180,10 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
             c_dim = c_dim * (*it); 
         }
         util::Vector<int> initVals = get_array_constInitVals(ctx->constInitVal(), dims, dimSize, 0);
+        #ifdef debug_on
+        printf("The array init values are: "); // debug
+        for(size_t i = 0; i < initVals.size(); i++) printf("%d ", initVals[i]); // debug
+        #endif
         if(sym->isGlobalVar()) {                                                    // 2.1 arraytype && global
             tr->genGlobalArray(name, initVals, sym->getType()->getSize(), true);
         } else {                                                                    // 2.2 arraytype && local
@@ -167,7 +193,7 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
             sym->attachTemp(arr);
             for(int initVal : initVals) {
                 Temp x = tr->genLoadImm4(initVal);
-                tr->genStore(arr, x, offset); // store initVals to arr in stack
+                tr->genStore(x, arr, offset); // store initVals to arr in stack
                 offset += 4;
             }
         }
@@ -176,8 +202,7 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitConstInitVal(SysYParser::ConstInitValContext *ctx) {
-    knpc_assert(false); // here is unreachable!!!
-    return nullptr;
+    return visitChildren(ctx);
 }
 
 // TODO: check
@@ -225,7 +250,7 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
                 sym->attachTemp(arr);
                 // for(int initVal : initVals) {
                 //     Temp x = tr->genLoadImm4(initVal);
-                //     tr->genStore(arr, x, offset);
+                //     tr->genStore(x, arr, offset);
                 //     offset += 4;
                 // }
             }
@@ -250,8 +275,7 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
 }    
 
 antlrcpp::Any SemPass1::visitInitVal(SysYParser::InitValContext *ctx) {
-    knpc_assert(false); // here is unreachable!!!
-    return nullptr;
+    return visitChildren(ctx);
 }
 
 antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
@@ -453,30 +477,30 @@ antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
     if(sym->isGlobalVar()) {
         Temp n = tr->genLoadSymbol(p_name);
         if(sym->getType()->isArrayType()) {
-            int c_dim = 1;
+            int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
-            for(auto it = c_type->getLength().rbegin();
-            it != c_type->getLength().rend(); ++it) {
+            for(int it = c_type->getLength().size() - 1;
+            it >= 0; it--) {
                 x = tr->genLoadImm4(c_dim);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
-                c_dim = c_dim*(*it);
+                c_dim = c_dim*(c_type->getLength()[it]);
             }
         }
         tr->genStore(r, n, 0);
     } else {
         Temp n = sym->getTemp();
         if(sym->getType()->isArrayType()) {
-            int c_dim = 1;
+            int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
-            for(auto it = c_type->getLength().rbegin();
-            it != c_type->getLength().rend(); ++it) {
+            for(int it = c_type->getLength().size() - 1;
+            it >= 0; it--) {
                 x = tr->genLoadImm4(c_dim);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
-                c_dim = c_dim*(*it);
+                c_dim = c_dim*(c_type->getLength()[it]);
             }
             tr->genStore(r, n, 0);
         } else {
@@ -513,15 +537,15 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
         n = tr->genLoadSymbol(p_name);
         bool isConst = n->isConst;
         if(sym->getType()->isArrayType()) {
-            int c_dim = 1;
+            int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
-            for(auto it = c_type->getLength().rbegin();
-            it != c_type->getLength().rend(); ++it) {
+            for(int it = c_type->getLength().size() - 1;
+            it >= 0; it--) {
                 x = tr->genLoadImm4(c_dim);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
-                c_dim = c_dim*(*it);
+                c_dim = c_dim*(c_type->getLength()[it]);
             }
         }
         n = tr->genLoad(n, 0);
@@ -530,15 +554,15 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
         n = sym->getTemp();
         bool isConst = n->isConst;
         if(sym->getType()->isArrayType()) {
-            int c_dim = 1;
+            int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
-            for(auto it = c_type->getLength().rbegin();
-            it != c_type->getLength().rend(); ++it) {
+            for(int it = c_type->getLength().size() - 1;
+            it >= 0; it--) {
                 x = tr->genLoadImm4(c_dim);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
-                c_dim = c_dim*(*it);
+                c_dim = c_dim*(c_type->getLength()[it]);
             }
             n = tr->genLoad(n, 0);
         }
