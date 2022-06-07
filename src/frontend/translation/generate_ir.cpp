@@ -381,7 +381,7 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
         dims.insert(dims.begin(), 0); // first dim length can be assigned as 0, won't influence correctness in assign stmt.
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType);
-    } else if(ctx->children[3]->getText()[0] == '[') {
+    } else if(ctx->getText().find("[") != std::string::npos) {
         util::Vector<int> dims;
         dims.push_back(0);
         Type *arrayType = new ArrayType(p_type, dims);
@@ -579,7 +579,7 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
                 dimSize.insert(dimSize.begin(), c_dim);
                 c_dim = c_dim * (*it); 
             }
-            for(size_t i = 0; i < r_dim; i++) {
+            for(int i = r_dim - 1; i >= 0; i--) {
                 x = tr->genLoadImm4(dimSize[i]);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
@@ -603,7 +603,7 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
                 dimSize.insert(dimSize.begin(), c_dim);
                 c_dim = c_dim * (*it); 
             }
-            for(size_t i = 0; i < r_dim; i++) {
+            for(int i = r_dim - 1; i >= 0; i--) {
                 x = tr->genLoadImm4(dimSize[i]);
                 y = tr->genMul(x, tempStack.top());tempStack.pop();
                 n = tr->genAdd(n, y);
