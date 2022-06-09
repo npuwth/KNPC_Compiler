@@ -34,7 +34,7 @@ antlrcpp::Any SemPass1::visitChildren(antlr4::tree::ParseTree *ctx) {
     for (size_t i = 0; i < n; ++i) ctx->children[i]->accept(this);
     return nullptr;
 }
-// TODO: somewhere not use this function may have NULL-> bug! (eg.some Li nodes)
+// somewhere not use this function may have NULL-> bug! (eg.some Li nodes)
 
 util::Vector<int> SemPass1::get_array_dims(SysYParser::ConstExpLiContext *ctx) {
     util::Vector<int> ret;
@@ -42,8 +42,9 @@ util::Vector<int> SemPass1::get_array_dims(SysYParser::ConstExpLiContext *ctx) {
     std::vector<SysYParser::ConstExpContext *> dims = ctx->constExp();
     for(auto i : dims) {
         i->accept(this); // the first dim is not null(according to the SysY Def)
+        knpc_assert(tempStack.top()->isConst);
         int cur = tempStack.top()->ctval;tempStack.pop();
-        if(i < 0) throw ZeroLengthedArrayError();
+        if(cur <= 0) throw ZeroLengthedArrayError();
         ret.push_back(cur);
     }
     #ifdef debug_on
@@ -161,7 +162,7 @@ antlrcpp::Any SemPass1::visitVarDefLi(SysYParser::VarDefLiContext *ctx) {
     return nullptr;
 }
 
-antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
+antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {            // const
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
     util::Vector<int> dims;
@@ -169,7 +170,7 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {
         dims = get_array_dims(ctx->constExpLi());
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType);
-    } else {
+    } else {                // is base variable
         sym = new Variable(name, p_type);
     }
     Symbol *s = scopes->lookup(name, false); // symbol name check
@@ -224,7 +225,7 @@ antlrcpp::Any SemPass1::visitConstInitVal(SysYParser::ConstInitValContext *ctx) 
 }
 
 // TODO: check
-antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
+antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not const
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
     util::Vector<int> dims;
@@ -245,7 +246,13 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
             ctx->initVal()->accept(this);
             Temp n = tempStack.top();tempStack.pop();
             if(sym->isGlobalVar()) {                               // 1.1 basetype && global
-                tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), false);
+                if(n->isConst) {
+                    tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), false);
+                } else {
+                    tr->genGlobalVarible(name, 0, sym->getType()->getSize(), false);
+                    Temp val = tr->genLoadSymbol(name);
+                    tr->genStore(n, val, 0);
+                }
             } else {                                               // 1.2 basetype && local
                 sym->attachTemp(tr->getNewTempI4()); // get local object then assign
                 tr->genAssign(sym->getTemp(), n);
@@ -262,10 +269,13 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {
             if(sym->isGlobalVar()) {                               // 2.1 arraytype && global
                 util::Vector<int> vals;
                 for(size_t i = 0; i < initVals.size(); i++) {
-                    knpc_assert(initVals[i]->isConst);
+                    // knpc_assert(initVals[i]->isConst);
                     vals.push_back(initVals[i]->ctval);
                 }
                 tr->genGlobalArray(name, vals, sym->getType()->getSize(), false); 
+                // TODO: global arr's initval must be const? no, but must has a init val
+                // here if use genStore to assign initval, the code where be generated nowhere(because not in a function)
+
                 // Temp n = tr->genLoadSymbol(name);
                 // int offset = 0;
                 // for(Temp initVal : initVals) {
@@ -376,12 +386,12 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     ctx->bType()->accept(this);
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
-    if(ctx->constExpLi()) {
+    if(ctx->constExpLi()) { // is array type
         util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         dims.insert(dims.begin(), 0); // first dim length can be assigned as 0, won't influence correctness in assign stmt.
         Type *arrayType = new ArrayType(p_type, dims);
         sym = new Variable(name, arrayType);
-    } else if(ctx->getText().find("[") != std::string::npos) {
+    } else if(ctx->getText().find("[") != std::string::npos) { // is array type
         util::Vector<int> dims;
         dims.push_back(0);
         Type *arrayType = new ArrayType(p_type, dims);
@@ -389,7 +399,7 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     } else {
         sym = new Variable(name, p_type);
     }
-    Symbol *s = scopes->lookup(name, false);
+    Symbol *s = scopes->lookup(name, false); // symbol check
     if(s != NULL) {
         throw new DeclConflictError(name, sym);
     }
@@ -486,9 +496,11 @@ antlrcpp::Any SemPass1::visitWhileStmt (SysYParser::WhileStmtContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitReturnStmt (SysYParser::ReturnStmtContext *ctx) {
-    ctx->exp()->accept(this);
-    tr->genReturn(tempStack.top());
-    tempStack.pop();
+    if(ctx->exp()) {
+        ctx->exp()->accept(this);
+        tr->genReturn(tempStack.top());
+        tempStack.pop();
+    }
     return nullptr;
 }   
 
@@ -498,17 +510,20 @@ antlrcpp::Any SemPass1::visitContinueStmt (SysYParser::ContinueStmtContext *ctx)
     return nullptr;
 }
 
-// TODO: check
 antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
     // differ according to the lval(array? global?)
     ctx->exp()->accept(this);
-    Temp r = tempStack.top();tempStack.pop();
-    ctx->lVal()->accept(this);
-    // tempStack.pop(); // move redundant temp from lVal
+    Temp r = tempStack.top();tempStack.pop(); // right_val
+    size_t r_dim = ctx->lVal()->accept(this);
     Variable *sym = (Variable *)(scopes->lookup(p_name, true));
-    if(sym->isGlobalVar()) {
+    if(sym->getType()->isArrayType()) {
+        ArrayType *c_type = (ArrayType *)(sym->getType());
+        knpc_assert(r_dim == c_type->getLength().size());
+        // if array as assignment's left val, must locate to a single element
+    }
+    if(sym->isGlobalVar()) {                                       // 1 global val
         Temp n = tr->genLoadSymbol(p_name);
-        if(sym->getType()->isArrayType()) {
+        if(sym->getType()->isArrayType()) {                        // 1.1 global && arraytype
             int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
@@ -519,11 +534,13 @@ antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
                 n = tr->genAdd(n, y);
                 c_dim = c_dim*(c_type->getLength()[it]);
             }
+            tr->genStore(r, n, 0);
+        } else {                                                   // 1.2 global && basetype
+            tr->genStore(r, n, 0);
         }
-        tr->genStore(r, n, 0);
-    } else {
+    } else {                                                       // 2 local val 
         Temp n = sym->getTemp();
-        if(sym->getType()->isArrayType()) {
+        if(sym->getType()->isArrayType()) {                        // 2.1 local && arraytype
             int c_dim = 4;
             Temp x, y;
             ArrayType *c_type = (ArrayType *)(sym->getType());
@@ -560,9 +577,9 @@ antlrcpp::Any SemPass1::visitPrimary1(SysYParser::Primary1Context *ctx) {
     return visitChildren(ctx);
 }
 
-// TODO: check
 antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
-    size_t r_dim = ctx->lVal()->accept(this); // TODO: not always r_dim == array dim
+    // must deal with const in this function!!!
+    size_t r_dim = ctx->lVal()->accept(this); // not always r_dim == array dim
     Temp n;
     Variable *sym = (Variable *)(scopes->lookup(p_name, true));
     if(sym->isGlobalVar()) {
