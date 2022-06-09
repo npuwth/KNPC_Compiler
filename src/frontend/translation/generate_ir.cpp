@@ -418,10 +418,14 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitFuncRParams(SysYParser::FuncRParamsContext *ctx) {
+    util::Vector<Temp> params;
     for(auto it : ctx->exp()) {
         it->accept(this);
         Temp n = tempStack.top();tempStack.pop();
-        tr->genParam(n); // from left to right, push into stack
+        params.push_back(n);
+    }
+    for(size_t i = 0; i < ctx->exp().size(); i++) {
+        tr->genParam(params[i]); // from left to right, push into stack
     }
     return nullptr;
 }
