@@ -168,7 +168,8 @@ Tac *TransHelper::memoOf(Function *f) {
 
             knpc_assert(NULL != t); // it should have been created in TransPass1
             if (cnt > 0) {
-                t->reg = cnt;
+                // t->reg = cnt;
+                t->reg = v->getOrder() + 1;
                 oss << t << ": A" << t->reg << " ";
             } else {
                 t->offset = v->offset;
