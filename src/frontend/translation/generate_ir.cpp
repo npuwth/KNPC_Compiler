@@ -340,8 +340,9 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     
     tr->startFunc(sym);
     ctx->block()->accept(this);
-    if(sym->getResultType()->equal(BaseType::Int)) 
-        tr->genReturn(tr->genLoadImm4(0)); // Return 0 by default
+    // here must have a return val, or will not return even if the type is "void"
+    // will error in generate_basic_block otherwise
+    tr->genReturn(tr->genLoadImm4(0)); // Return 0 by default
     tr->endFunc();
 
     scopes->close();
@@ -505,6 +506,8 @@ antlrcpp::Any SemPass1::visitReturnStmt (SysYParser::ReturnStmtContext *ctx) {
         ctx->exp()->accept(this);
         tr->genReturn(tempStack.top());
         tempStack.pop();
+    } else {
+        tr->genReturn(tr->genLoadImm4(0)); // must gen return tac here!
     }
     return nullptr;
 }   

@@ -10,6 +10,8 @@
 using namespace antlr4;
 using namespace knpc;
 
+// #define debug_on
+
 int main(int argc, char **argv) {
 
     //GC_INIT();
@@ -20,8 +22,11 @@ int main(int argc, char **argv) {
     // }
     std::ifstream sourceFile;
     sourceFile.open(argv[1]);
-    // sourceFile.open("../test/000_main.c");
-    
+    #ifdef debug_on
+    std::ofstream tacFile;
+    tacFile.open("debug.tac");
+    #endif
+
     // lexer & parser part of antlr4
     ANTLRInputStream input(sourceFile);
     SysYLexer lexer(&input);
@@ -35,6 +40,12 @@ int main(int argc, char **argv) {
     MachineDesc *md = new ArmDesc();
     SysYParser::ProgramContext* treeNode = parser.program(); // root node
     tac::Piece *p = runSemPass1(treeNode, md);
+    #ifdef debug_on
+    while(p != NULL) {
+        p->dump(tacFile);
+        p = p->next;
+    }
+    #endif
 
     // p->dump(std::cout); // debug
     // generate asm
