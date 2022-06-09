@@ -72,7 +72,9 @@ class Variable : public Symbol {
     // the attached register object
     tac::Temp attached;
     // init value for global variable
-    int global_init;
+    util::Vector<int> global_init;
+    // the const flag
+    bool is_const;
 
   public:
     // Constructor
@@ -81,46 +83,14 @@ class Variable : public Symbol {
     void setParameter(void);
     // Tests whether it is a parameter
     bool isParameter(void);
-    // Set init value for a global variable
-    void setGlobalInit(int val);
-    // Get the init value for a global variable
-    int getGlobalInit();
-    // Tests whether it is a global variable
-    bool isGlobalVar(void);
-    // Tests whether it is a local variable
-    bool isLocalVar(void);
-    // Tests whether this symbol is a Variable
-    virtual bool isVariable(void);
-    // Prints this symbol
-    virtual void dump(std::ostream &os);
-    // Attaches a temporary variable object to this symbol
-    void attachTemp(tac::Temp);
-    // Gets the attached register object
-    tac::Temp getTemp(void);
-};
-
-/* ArrayVariable Declaration.
- */
-class ArrayVariable : public Symbol {
-  private:
-    // the parameter flag
-    bool is_parameter;
-    // the attached register object
-    tac::Temp attached;
-    // init value for global variable
-    util::Vector<int> global_init;
-
-  public:
-    // Constructor
-    ArrayVariable(std::string n, type::Type *t);
-    // Sets the parameter flag
-    void setParameter(void);
-    // Tests whether it is a parameter
-    bool isParameter(void);
+    // Sets the const flag
+    void setConst(void);
+    // Tests whether it is const
+    bool isConst(void);
     // Set init value for a global variable
     void setGlobalInit(util::Vector<int> val);
     // Get the init value for a global variable
-    util::Vector<int> getGlobalInit();
+    int getGlobalInit(int);
     // Tests whether it is a global variable
     bool isGlobalVar(void);
     // Tests whether it is a local variable

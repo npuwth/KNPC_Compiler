@@ -29,7 +29,8 @@ Variable::Variable(std::string n, Type *t) {
     defined_in = NULL;
 
     is_parameter = false;
-    global_init = 0;
+    is_const = false;
+    // global_init = 0;
     attached = NULL;
 
     mark = 0;
@@ -47,9 +48,13 @@ void Variable::setParameter(void) { is_parameter = true; }
  */
 bool Variable::isParameter(void) { return is_parameter; }
 
-void Variable::setGlobalInit(int val) { global_init = val; }
+void Variable::setConst(void) { is_const = true; }
 
-int Variable::getGlobalInit() { return global_init; }
+bool Variable::isConst(void) { return is_const; }
+
+void Variable::setGlobalInit(util::Vector<int> val) { global_init = val; }
+
+int Variable::getGlobalInit(int index) { return global_init[index]; }
 
 /* Tests whether it is a local variable.
  *
@@ -92,8 +97,11 @@ void Variable::dump(std::ostream &os) {
     else
         os << (name);
     os << " : " << type;
-    if (isGlobalVar())
-        os << " = " << global_init;
+    if (isGlobalVar()) {
+        os << " = { ";
+        for(int i : global_init) os << i << " ";
+        os << "}";
+    }
 }
 
 /* Attaches the register object to this symbol.
