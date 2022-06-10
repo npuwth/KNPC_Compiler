@@ -363,15 +363,17 @@ void ArmDesc::emitTac(Tac *t) {
 
 void ArmDesc::emitCallTac(Tac *t) {
 
-    Tac *first_tac_before_param = t->prev ? t->prev : t;
-    for(; first_tac_before_param->prev != NULL && first_tac_before_param->op_code == Tac::PARAM; first_tac_before_param = first_tac_before_param->prev) ;
+    util::Set<Temp> *LiveInternal = t->LiveOut->clone();
+    for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) {
+        LiveInternal->add(it->op0.var);
+    }
     Set<Temp>* liveness = t->LiveOut->clone();
 
     {
         int cnt = 0;
         for(auto temp : *liveness){
             cnt -= 4;
-            int r1 = getRegForRead(temp, 0, first_tac_before_param->LiveOut);
+            int r1 = getRegForRead(temp, 0, LiveInternal);
             addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
         }
         addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
@@ -385,7 +387,7 @@ void ArmDesc::emitCallTac(Tac *t) {
         int cnt = count;
         for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev){
             cnt -= 4;
-            int r1 = getRegForRead(it->op0.var, 0, it->LiveOut);
+            int r1 = getRegForRead(it->op0.var, 0, LiveInternal);
             if (cnt <= 16) {
                 addInstr(ArmInstr::MV,  _reg[cnt >> 2], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
             } else {
@@ -393,8 +395,10 @@ void ArmDesc::emitCallTac(Tac *t) {
             }
         }
     }
-    count += liveness->size() * 4;
 
+    delete LiveInternal;
+    
+    count += liveness->size() * 4;
     addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, t->op1.label->str_form, EMPTY_STR);
     
     //printf("%d\n", r0);
@@ -474,10 +478,14 @@ void ArmDesc::emitLoadTac(Tac *t) {
 
 void ArmDesc::emitStoreTac(Tac *t) {
     util::Set<Temp> *LiveInternal = t->LiveOut->clone();
+
     LiveInternal->add(t->op0.var);
     LiveInternal->add(t->op1.var);
     int r0 = getRegForRead(t->op0.var, 0, LiveInternal);
     int r1 = getRegForRead(t->op1.var, r0, LiveInternal);
+
+    delete LiveInternal;
+
     addInstr(ArmInstr::SW, _reg[r0], _reg[r1], NULL, t->op1.offset, EMPTY_STR,
              EMPTY_STR);
 }
