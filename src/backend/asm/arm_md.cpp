@@ -363,9 +363,11 @@ void ArmDesc::emitTac(Tac *t) {
 
 void ArmDesc::emitCallTac(Tac *t) {
 
+    int param_cnt = 0;
     util::Set<Temp> *LiveInternal = t->LiveOut->clone();
     for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) {
         LiveInternal->add(it->op0.var);
+        param_cnt++;
     }
     Set<Temp>* liveness = t->LiveOut->clone();
 
@@ -379,32 +381,32 @@ void ArmDesc::emitCallTac(Tac *t) {
         addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
     }
 
-    int count = 0;
-    for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) count += 4;
-
-    if(count > 0){
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -count, EMPTY_STR, EMPTY_STR);
-        int cnt = count;
-        for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev){
-            cnt -= 4;
+    if(param_cnt > 0){
+        if (param_cnt > 4) {
+            addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -((param_cnt - 4) << 2), EMPTY_STR, EMPTY_STR);
+        }
+        int current_idx = param_cnt;
+        for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) {
+            current_idx--;
             int r1 = getRegForRead(it->op0.var, 0, LiveInternal);
-            if (cnt <= 16) {
-                addInstr(ArmInstr::MV,  _reg[cnt >> 2], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
+            if (current_idx < 4) {
+                addInstr(ArmInstr::MV,  _reg[current_idx], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
             } else {
-                addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
+                addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, (current_idx - 4) << 2, EMPTY_STR, EMPTY_STR);
             }
         }
     }
 
     delete LiveInternal;
+
     
-    count += liveness->size() * 4;
+    int recycle_size = (param_cnt > 4 ? (param_cnt - 4) << 2 : 0) + liveness->size() * 4;
     addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, t->op1.label->str_form, EMPTY_STR);
     
     //printf("%d\n", r0);
     {
         int cnt = 0;
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, count, EMPTY_STR, EMPTY_STR);
+        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, recycle_size, EMPTY_STR, EMPTY_STR);
         for(auto temp: *liveness){
             cnt -= 4;
             int r1 = getRegForWrite(temp, 0, 0, t->LiveOut);

@@ -153,13 +153,6 @@ Tac *TransHelper::memoOf(Function *f) {
     std::ostringstream oss;
     FuncScope *scope = f->getAssociatedScope();
 
-    int cnt = 0;
-    for (Scope::iterator it = scope->begin(); it != scope->end(); ++it) {
-        Variable *v = (Variable *)*it;
-        if (v->isParameter()) {
-            cnt++;
-        }
-    }
     for (Scope::iterator it = scope->begin(); it != scope->end(); ++it) {
         Variable *v = (Variable *)*it;
 
@@ -167,16 +160,14 @@ Tac *TransHelper::memoOf(Function *f) {
             Temp t = v->getTemp();
 
             knpc_assert(NULL != t); // it should have been created in TransPass1
-            if (cnt > 0) {
-                // t->reg = cnt;
+            if (v->getOrder() < 4) {
                 t->reg = v->getOrder() + 1;
                 oss << t << ": A" << t->reg << " ";
             } else {
-                t->offset = v->offset;
+                t->offset = v->offset - 16;
                 t->is_offset_fixed = true;
                 oss << t << ": " << t->offset << " ";
             }
-            cnt--;
         }
     }
 
