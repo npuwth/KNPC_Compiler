@@ -371,17 +371,22 @@ void ArmDesc::emitCallTac(Tac *t) {
     }
     Set<Temp>* liveness = t->LiveOut->clone();
 
-    {
-        int cnt = 0;
-        for(auto temp : *liveness){
-            cnt -= 4;
-            int r1 = getRegForRead(temp, 0, LiveInternal);
-            addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
+    int saved_cnt = 0;
+    Temp origin_a1 = NULL;
+    for(auto temp : *liveness) {
+        if(temp == t->op0.var) {
+            continue;
         }
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
+        saved_cnt++;
+        int r1 = getRegForRead(temp, 0, LiveInternal);
+        addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, EMPTY_STR);
+        if(r1 == ArmReg::A1) {
+            origin_a1 = temp;
+        }
     }
+    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, EMPTY_STR);
 
-    if(param_cnt > 0){
+    if(param_cnt > 0) {
         if (param_cnt > 4) {
             addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -((param_cnt - 4) << 2), EMPTY_STR, EMPTY_STR);
         }
@@ -398,24 +403,33 @@ void ArmDesc::emitCallTac(Tac *t) {
     }
 
     delete LiveInternal;
-
     
-    int recycle_size = (param_cnt > 4 ? (param_cnt - 4) << 2 : 0) + liveness->size() * 4;
     addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, t->op1.label->str_form, EMPTY_STR);
     
-    //printf("%d\n", r0);
-    {
-        int cnt = 0;
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, recycle_size, EMPTY_STR, EMPTY_STR);
-        for(auto temp: *liveness){
-            cnt -= 4;
+    _reg[ArmReg::A1]->var = t->op0.var;
+    _reg[ArmReg::A1]->dirty = true;
+
+    int restored_cnt = 0;
+    int recycle_size = (param_cnt > 4 ? (param_cnt - 4) << 2 : 0) + (saved_cnt << 2);
+    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, recycle_size, EMPTY_STR, EMPTY_STR);
+    for(auto temp: *liveness) {
+        if(temp == t->op0.var) {
+            continue;
+        }
+        restored_cnt++;
+        if(origin_a1 != NULL && origin_a1 == temp) {
+            spillReg(ArmReg::A1, t->LiveOut);
+            int r1 = ArmReg::A1;
+            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, -(restored_cnt << 2), EMPTY_STR, EMPTY_STR);
+            _reg[ArmReg::A1]->var = temp;
+        } else {
             int r1 = getRegForWrite(temp, 0, 0, t->LiveOut);
-            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, cnt, EMPTY_STR, EMPTY_STR);
+            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, -(restored_cnt << 2), EMPTY_STR, EMPTY_STR);
         }
     }
-    
-    int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
-    addInstr(ArmInstr::MV, _reg[r0], _reg[ArmReg::A1], NULL, 0, EMPTY_STR, EMPTY_STR);
+
+    knpc_assert(saved_cnt == restored_cnt);
+
 }
 
 
