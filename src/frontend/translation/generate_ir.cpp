@@ -203,6 +203,11 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
             c_dim = c_dim * (*it); 
         }
         util::Vector<int> initVals = get_array_constInitVals(ctx->constInitVal(), dims, dimSize, 0);
+        int tag = 0;
+        for(int i : initVals) {
+            if(i != 0) tag = 1;
+        }
+        if(tag == 0) initVals.clear(); // if all zero then bss
         sym->setConst();
         sym->setGlobalInit(initVals);
         #ifdef debug_on
@@ -273,10 +278,13 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not cons
             util::Vector<Temp> initVals = get_array_initVals(ctx->initVal(), dims, dimSize, 0);
             if(sym->isGlobalVar()) {                               // 2.1 arraytype && global
                 util::Vector<int> vals;
+                int tag = 0;
                 for(size_t i = 0; i < initVals.size(); i++) {
                     // knpc_assert(initVals[i]->isConst);
                     vals.push_back(initVals[i]->ctval);
+                    if(initVals[i]->ctval != 0) tag = 1;
                 }
+                if(tag == 0) vals.clear(); // if all zero then bss
                 tr->genGlobalArray(name, vals, sym->getType()->getSize(), false); 
                 // TODO: global arr's initval must be const? no, but must has a init val
                 // here if use genStore to assign initval, the code where be generated nowhere(because not in a function)
