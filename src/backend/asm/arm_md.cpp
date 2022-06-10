@@ -471,8 +471,9 @@ void ArmDesc::emitLoadTac(Tac *t) {
 }
 
 void ArmDesc::emitStoreTac(Tac *t) {
-
-    int r0 = getRegForRead(t->op0.var, 0, t->LiveOut);
+    util::Set<Temp> *LiveInternal = t->LiveOut->clone();
+    LiveInternal->add(t->op1.var);
+    int r0 = getRegForRead(t->op0.var, 0, LiveInternal);
     int r1 = getRegForRead(t->op1.var, r0, t->LiveOut);
     addInstr(ArmInstr::SW, _reg[r0], _reg[r1], NULL, t->op1.offset, EMPTY_STR,
              EMPTY_STR);
