@@ -455,7 +455,9 @@ void ArmDesc::emitLoadSymbolTac(Tac *t) {
 
     // uses "load immediate number" instruction
     int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
-    addInstr(ArmInstr::LA, _reg[r0], NULL, NULL, 0, t->op1.name,
+    addInstr(ArmInstr::MOVW, _reg[r0], NULL, NULL, 0, t->op1.name,
+             EMPTY_STR);
+    addInstr(ArmInstr::MOVT, _reg[r0], NULL, NULL, 0, t->op1.name,
              EMPTY_STR);
 }
 
@@ -775,8 +777,12 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         oss << "bl" << i->l;
         break;
 
-    case ArmInstr::LA:
-        oss << "ldr" << i->r0->name << ", =" << i->l;
+    case ArmInstr::MOVW:
+        oss << "movw" << i->r0->name << ", #:lower16:" << i->l;
+        break;
+    
+    case ArmInstr::MOVT:
+        oss << "movt" << i->r0->name << ", #:upper16:" << i->l;
         break;
 
     default:

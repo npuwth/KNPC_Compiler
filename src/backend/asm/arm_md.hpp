@@ -101,7 +101,8 @@ struct ArmInstr : public Instr {
         SGE,
         CGE,
         CALL,
-        LA,
+        MOVW,
+        MOVT,
         // You could add other instructions/pseudo instructions here
     } op_code; // operation code
 
