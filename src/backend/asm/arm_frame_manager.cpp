@@ -5,7 +5,7 @@
  */
 
 #include "asm/arm_frame_manager.hpp"
-#include "config.hpp"
+#include "util/config.hpp"
 #include "tac/tac.hpp"
 
 #include <algorithm>

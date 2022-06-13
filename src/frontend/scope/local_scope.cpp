@@ -3,7 +3,7 @@
  */
 
 #include "3rdparty/vector.hpp"
-#include "config.hpp"
+#include "util/config.hpp"
 #include "scope/scope.hpp"
 #include "symb/symbol.hpp"
 

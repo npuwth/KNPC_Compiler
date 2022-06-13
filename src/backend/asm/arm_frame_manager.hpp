@@ -8,8 +8,7 @@
 #define __KNPC_ARMFM__
 
 #include "3rdparty/set.hpp"
-#include "define.hpp"
-
+#include "util/define.hpp"
 namespace knpc {
 namespace assembly {
 

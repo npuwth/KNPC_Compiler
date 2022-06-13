@@ -11,7 +11,7 @@
  *
  */
 
-#include "config.hpp"
+#include "util/config.hpp"
 #include "tac/flow_graph.hpp"
 #include "tac/tac.hpp"
 

@@ -5,7 +5,7 @@
 
 #include "tac/flow_graph.hpp"
 #include "3rdparty/map.hpp"
-#include "config.hpp"
+#include "util/config.hpp"
 #include "tac/tac.hpp"
 #include <unordered_map>
 

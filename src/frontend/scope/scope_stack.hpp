@@ -12,7 +12,7 @@
 #define __KNPC_SCOPESTACK__
 
 #include "3rdparty/stack.hpp"
-#include "define.hpp"
+#include "util/define.hpp"
 #include "scope/scope.hpp"
 
 namespace knpc {

@@ -11,7 +11,7 @@
 #ifndef __KNPC_SYMBOL__
 #define __KNPC_SYMBOL__
 
-#include "define.hpp"
+#include "util/define.hpp"
 #include "scope/scope.hpp"
 #include "type/type.hpp"
 

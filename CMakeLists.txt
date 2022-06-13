@@ -23,6 +23,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src/backend/asm/
     ${PROJECT_SOURCE_DIR}/src/3rdparty/
     ${PROJECT_SOURCE_DIR}/src/optimizer/
+    ${PROJECT_SOURCE_DIR}/src/util/
 )
 
 file(GLOB antlr4-cpp-src
@@ -57,6 +58,7 @@ file(GLOB src_dir
     ${PROJECT_SOURCE_DIR}/src/frontend/type/*.cpp
     ${PROJECT_SOURCE_DIR}/src/optimizer/*.cpp
     ${PROJECT_SOURCE_DIR}/src/backend/asm/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/*.cpp
     ${PROJECT_SOURCE_DIR}/src/*.cpp
 )
 

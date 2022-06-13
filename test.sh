@@ -1,6 +1,5 @@
 COMPILER='./build/SysY'
 TEST_PATH='./test'
-make
 passed=0
 CE=0
 WA=0

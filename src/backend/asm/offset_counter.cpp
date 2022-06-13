@@ -6,7 +6,7 @@
  */
 
 #include "asm/offset_counter.hpp"
-#include "config.hpp"
+#include "util/config.hpp"
 
 using namespace knpc::assembly;
 

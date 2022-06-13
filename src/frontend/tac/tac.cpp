@@ -5,8 +5,8 @@
  */
 
 #include "tac/tac.hpp"
-#include "config.hpp"
-#include "options.hpp"
+#include "util/config.hpp"
+#include "util/options.hpp"
 #include "tac/flow_graph.hpp"
 
 #include <iomanip>

@@ -6,7 +6,7 @@
 #ifndef __KNPC_MACHDESC__
 #define __KNPC_MACHDESC__
 
-#include "define.hpp"
+#include "util/define.hpp"
 
 #include <iostream>
 

@@ -5,7 +5,7 @@
  */
 
 #include "symb/symbol.hpp"
-#include "config.hpp"
+#include "util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::symb;

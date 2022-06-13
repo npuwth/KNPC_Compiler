@@ -5,7 +5,7 @@
  */
 
 #include "scope/scope_stack.hpp"
-#include "config.hpp"
+#include "util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::scope;

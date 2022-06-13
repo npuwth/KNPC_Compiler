@@ -8,8 +8,8 @@
  */
 
 #include "scope/scope.hpp"
-#include "config.hpp"
-#include "location.hpp"
+#include "util/config.hpp"
+#include "util/location.hpp"
 #include "symb/symbol.hpp"
 
 using namespace knpc;

@@ -4,7 +4,7 @@
  *  Keltin Leung 
  */
 
-#include "config.hpp"
+#include "util/config.hpp"
 #include "type/type.hpp"
 
 using namespace knpc::type;

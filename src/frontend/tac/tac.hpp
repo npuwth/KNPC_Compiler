@@ -1,7 +1,7 @@
 #ifndef __KNPC_TAC__
 #define __KNPC_TAC__
 #include <iostream>
-#include  "define.hpp"
+#include "util/define.hpp"
 #include "3rdparty/set.hpp"
 #include "3rdparty/vector.hpp"
 namespace knpc{

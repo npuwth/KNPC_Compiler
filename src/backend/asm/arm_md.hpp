@@ -9,7 +9,7 @@
 #include "3rdparty/set.hpp"
 #include "asm/mach_desc.hpp"
 #include "asm/arm_frame_manager.hpp"
-#include "define.hpp"
+#include "util/define.hpp"
 
 namespace knpc {
 #define ARM_COMPONENTS_DEFINED

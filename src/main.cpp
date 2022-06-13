@@ -3,8 +3,8 @@
 
 #include "frontend/parser/SysYLexer.h"
 #include "frontend/parser/SysYParser.h"
-#include "define.hpp"
-#include "config.hpp"
+#include "util/define.hpp"
+#include "util/config.hpp"
 #include "translation/generate_ir.hpp"
 
 using namespace antlr4;
