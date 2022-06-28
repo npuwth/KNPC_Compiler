@@ -72,6 +72,8 @@ testcases
 failcases
 out
 minidecaf-tests
+functional
+performance
 
 test.sh
 debug
