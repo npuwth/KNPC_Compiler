@@ -44,7 +44,6 @@ src/.vscode/**
 
 # Executables
 *.exe
-*.out
 *.app
 *.tmp
 
