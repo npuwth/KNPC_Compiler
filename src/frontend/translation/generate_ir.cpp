@@ -894,16 +894,18 @@ antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
 antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) {
     Temp n;
     if(ctx->lAndExp()) {
+        Temp v = tr->getNewTempI4();
         ctx->lAndExp()->accept(this); // compute lreg
         Temp l = tempStack.top();tempStack.pop();
+        tr->genAssign(v, l);
         Label label = tr->getNewLabel();
         tr->genJumpOnZero(label, l); // if left val false, jump
         ctx->eqExp()->accept(this); // compute rreg
         Temp r = tempStack.top();tempStack.pop();
         n = tr->genLAnd(l, r); // get "and" result use lreg, rreg
-        tr->genAssign(l, n);   // assign result to lreg
+        tr->genAssign(v, n);   // assign result to vreg
         tr->genMarkLabel(label);
-        n = l; // return lreg
+        n = v; // return vreg
     } else {
         ctx->eqExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
@@ -916,17 +918,19 @@ antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) {
 antlrcpp::Any SemPass1::visitLOrExp(SysYParser::LOrExpContext *ctx) {
     Temp n;
     if(ctx->lOrExp()) {
+        Temp v = tr->getNewTempI4();
         ctx->lOrExp()->accept(this);
         Temp l = tempStack.top();tempStack.pop();
+        tr->genAssign(v, l);
         Label label = tr->getNewLabel();
         Temp nl = tr->genLNot(l);
         tr->genJumpOnZero(label, nl);
         ctx->lAndExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         n = tr->genLOr(l, r);
-        tr->genAssign(l, n);
+        tr->genAssign(v, n);
         tr->genMarkLabel(label);
-        n = l;
+        n = v;
     } else {
         ctx->lAndExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
