@@ -414,6 +414,7 @@ void ArmDesc::emitCallTac(Tac *t) {
     int recycle_size = (param_cnt > 4 ? (param_cnt - 4) << 2 : 0) + (saved_cnt << 2);
     addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, recycle_size, EMPTY_STR, EMPTY_STR);
 
+    // restore registers
     int restored_cnt = 0;
     for(int idx = 0; idx < ArmReg::TOTAL_NUM; idx++) {
         if(saved[idx] != NULL) {
@@ -606,12 +607,12 @@ void ArmDesc::emitFuncty(Functy f) {
         (*it)->entry_label = getNewLabel(); // adds entry label of a basic block
     }
     int param_cnt = 0;
+    Temp param[4] = {NULL};
     for (Temp v: *((*g->begin())->LiveIn)) {
         if (v->param_ord > 0 && v->param_ord < 5) {
             int reg_idx = v->param_ord - 1;
-            // put self into target reg
-            _reg[reg_idx]->var = v;
-            _reg[reg_idx]->dirty = true;
+            // record
+            param[reg_idx] = v;
             // only do once
             v->param_ord = 0;
             param_cnt++;
@@ -622,6 +623,13 @@ void ArmDesc::emitFuncty(Functy f) {
         BasicBlock *b = *it;
         b->analyzeLiveness(); // computes LiveOut set of every TAC
         _frame->reset();
+        for (int idx = 0; idx < 4; idx++) {
+            if (param[idx] != NULL && b->LiveIn->contains(param[idx])) {
+                // put self into target reg
+                _reg[idx]->var = param[idx];
+                _reg[idx]->dirty = true;
+            }
+        }
         // translates the TAC sequences of this block
         b->instr_chain = prepareSingleChain(b, g);
         if (Option::doOptimize()) // use "-O" option to enable optimization
@@ -940,36 +948,36 @@ int ArmDesc::getRegForRead(Temp v, int avoid1, LiveSet *live) {
     std::ostringstream oss;
 
     // if (v->param_ord) {
-        // if (v->param_ord > 0 && v->param_ord < 5) {
-        //     std::cout << "@" << v->param_ord << " " << v->id << std::endl;
-        //     int reg_idx = v->param_ord - 1;
-        //     // put self into target reg
-        //     _reg[reg_idx]->var = v;
-        //     _reg[reg_idx]->dirty = true;
-        //     // only do once
-        //     v->param_ord = 0;
-        //     return reg_idx;
-        // }
-        // on stack
-        // if (v->param_ord >= 5) {
-        //     int i = lookupReg(NULL);
-        //     if (i < 0) {
-        //         i = selectRegToSpill(avoid1, ArmReg::PC, live);
-        //         spillReg(i, live);
-        //     }
-        //     _reg[i]->var = v;
-        //     _reg[i]->dirty = true;
+    //     if (v->param_ord > 0 && v->param_ord < 5) {
+    //         std::cout << "@" << v->param_ord << " " << v->id << std::endl;
+    //         int reg_idx = v->param_ord - 1;
+    //         // put self into target reg
+    //         _reg[reg_idx]->var = v;
+    //         _reg[reg_idx]->dirty = true;
+    //         // only do once
+    //         v->param_ord = 0;
+    //         return reg_idx;
+    //     }
+    //     // on stack
+    //     if (v->param_ord >= 5) {
+    //         int i = lookupReg(NULL);
+    //         if (i < 0) {
+    //             i = selectRegToSpill(avoid1, ArmReg::PC, live);
+    //             spillReg(i, live);
+    //         }
+    //         _reg[i]->var = v;
+    //         _reg[i]->dirty = true;
 
-        //     ArmReg *base = _reg[ArmReg::FP];
-        //     int offset = (v->param_ord - 5) << 2;
-        //     oss << "load param " << v << " from (" << base->name
-        //         << (offset < 0 ? "" : "+") << offset << ") into "
-        //         << _reg[i]->name;
-        //     addInstr(ArmInstr::LW, _reg[i], base, NULL, offset, EMPTY_STR,
-        //             oss.str());
+    //         ArmReg *base = _reg[ArmReg::FP];
+    //         int offset = (v->param_ord - 5) << 2;
+    //         oss << "load param " << v << " from (" << base->name
+    //             << (offset < 0 ? "" : "+") << offset << ") into "
+    //             << _reg[i]->name;
+    //         addInstr(ArmInstr::LW, _reg[i], base, NULL, offset, EMPTY_STR,
+    //                 oss.str());
             
-        //     v->param_ord = 0;
-        //     return i;
+    //         v->param_ord = 0;
+    //         return i;
     //     }
     // }
 
