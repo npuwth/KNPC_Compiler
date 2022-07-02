@@ -108,8 +108,8 @@ void SemPass1::initRunTimeLabels() { // 9 runtime library functions
     runtimeLabels[4] = tr->getNewEntryLabel("putch");
     runtimeLabels[5] = tr->getNewEntryLabel("putarray");
     runtimeLabels[6] = tr->getNewEntryLabel("putf");
-    runtimeLabels[7] = tr->getNewEntryLabel("starttime");
-    runtimeLabels[8] = tr->getNewEntryLabel("stoptime");
+    runtimeLabels[7] = tr->getNewEntryLabel("_sysy_starttime");
+    runtimeLabels[8] = tr->getNewEntryLabel("_sysy_stoptime");
 }
 
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
