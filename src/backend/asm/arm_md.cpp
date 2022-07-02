@@ -66,7 +66,7 @@ ArmDesc::ArmDesc(void) {
     _reg[ArmReg::V6] = new ArmReg("v6", true);
     _reg[ArmReg::V7] = new ArmReg("v7", true);
     _reg[ArmReg::FP] = new ArmReg("fp", false);
-    _reg[ArmReg::IP] = new ArmReg("ip", false);
+    _reg[ArmReg::IP] = new ArmReg("ip", true);
     _reg[ArmReg::SP] = new ArmReg("sp", false);
     _reg[ArmReg::LR] = new ArmReg("lr", false);
     _reg[ArmReg::PC] = new ArmReg("pc", false);
@@ -362,30 +362,26 @@ void ArmDesc::emitTac(Tac *t) {
 
 
 void ArmDesc::emitCallTac(Tac *t) {
-
-    int param_cnt = 0;
-    util::Set<Temp> *LiveInternal = t->LiveOut->clone();
-    for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) {
-        LiveInternal->add(it->op0.var);
-        param_cnt++;
-    }
-    Set<Temp>* liveness = t->LiveOut->clone();
-
+    // save registers
+    Temp saved[16] = {NULL};
     int saved_cnt = 0;
-    Temp origin_a1 = NULL;
-    for(auto temp : *liveness) {
-        if(temp == t->op0.var) {
-            continue;
-        }
-        saved_cnt++;
-        int r1 = getRegForRead(temp, 0, LiveInternal);
-        addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, EMPTY_STR);
-        if(r1 == ArmReg::A1) {
-            origin_a1 = temp;
+    for(int idx = 0; idx < ArmReg::TOTAL_NUM; idx++) {
+        if((idx < 4 || _reg[idx]->general) && _reg[idx]->var != NULL && t->LiveOut->contains(_reg[idx]->var)) {
+            saved_cnt++;
+            saved[idx] = _reg[idx]->var;
+            addInstr(ArmInstr::SW,  _reg[idx], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, ((std::string)("save register r") + std::to_string(idx)).c_str());
         }
     }
     addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, EMPTY_STR);
 
+    // preparing the parameters
+    int param_cnt = 0;
+    Set<Temp> *LiveInternal = t->LiveOut->clone();
+    for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) {
+        LiveInternal->add(it->op0.var);
+        param_cnt++;
+    }
+    // Temp spilled[4] = {NULL};
     if(param_cnt > 0) {
         if (param_cnt > 4) {
             addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -((param_cnt - 4) << 2), EMPTY_STR, EMPTY_STR);
@@ -395,40 +391,60 @@ void ArmDesc::emitCallTac(Tac *t) {
             current_idx--;
             int r1 = getRegForRead(it->op0.var, 0, LiveInternal);
             if (current_idx < 4) {
-                addInstr(ArmInstr::MV,  _reg[current_idx], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
+                if(current_idx != r1) {
+                    // spilled[current_idx] = _reg[current_idx]->var;
+                    spillReg(current_idx, LiveInternal);
+                    addInstr(ArmInstr::MV,  _reg[current_idx], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
+                    _reg[current_idx]->var = it->op0.var;
+                } else {
+                    addInstr(ArmInstr::COMMENT, NULL, NULL, NULL, 0, EMPTY_STR, std::string("PARAM ") + it->op0.name + std::string("is already in r") + std::to_string(r1));
+                }
             } else {
                 addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, (current_idx - 4) << 2, EMPTY_STR, EMPTY_STR);
             }
         }
     }
-
     delete LiveInternal;
     
     addInstr(ArmInstr::CALL, NULL, NULL, NULL, 0, t->op1.label->str_form, EMPTY_STR);
-    
+
     _reg[ArmReg::A1]->var = t->op0.var;
     _reg[ArmReg::A1]->dirty = true;
 
-    int restored_cnt = 0;
     int recycle_size = (param_cnt > 4 ? (param_cnt - 4) << 2 : 0) + (saved_cnt << 2);
     addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, recycle_size, EMPTY_STR, EMPTY_STR);
-    for(auto temp: *liveness) {
-        if(temp == t->op0.var) {
-            continue;
-        }
-        restored_cnt++;
-        if(origin_a1 != NULL && origin_a1 == temp) {
-            spillReg(ArmReg::A1, t->LiveOut);
-            int r1 = ArmReg::A1;
-            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, -(restored_cnt << 2), EMPTY_STR, EMPTY_STR);
-            _reg[ArmReg::A1]->var = temp;
-        } else {
-            int r1 = getRegForWrite(temp, 0, 0, t->LiveOut);
-            addInstr(ArmInstr::LW,  _reg[r1], _reg[ArmReg::SP], NULL, -(restored_cnt << 2), EMPTY_STR, EMPTY_STR);
+
+    int restored_cnt = 0;
+    for(int idx = 0; idx < ArmReg::TOTAL_NUM; idx++) {
+        if(saved[idx] != NULL) {
+            restored_cnt++;
+            if(idx < 4) {
+                if(idx == 0) {
+                    spillReg(idx, t->LiveOut);
+                }
+                _reg[idx]->var = saved[idx];
+            }
+            addInstr(ArmInstr::LW,  _reg[idx], _reg[ArmReg::SP], NULL, -(restored_cnt << 2), EMPTY_STR, ((std::string)("restore register r") + std::to_string(idx)).c_str());
+        } else if(idx != 0) {
+            _reg[idx]->var = NULL;
         }
     }
 
-    knpc_assert(saved_cnt == restored_cnt);
+    // // restore A1~A4
+    // for(int idx = 0; idx < (param_cnt < 4 ? param_cnt : 4); idx++) {
+    //     if(spilled[idx] != NULL && t->LiveOut->contains(spilled[idx])) {
+    //         spillReg(idx, t->LiveOut);
+    //         knpc_assert(spilled[idx]->is_offset_fixed);
+    //         ArmReg *base = _reg[ArmReg::FP];
+    //         std::stringstream oss;
+    //         oss << "load " << spilled[idx] << " from (" << base->name
+    //             << (spilled[idx]->offset < 0 ? "" : "+") << spilled[idx]->offset << ") into "
+    //             << _reg[idx]->name;
+    //         addInstr(ArmInstr::LW, _reg[idx], base, NULL, spilled[idx]->offset, EMPTY_STR,
+    //                 oss.str());
+    //         _reg[idx]->var = spilled[idx];
+    //     }
+    // }
 
 }
 
@@ -589,6 +605,19 @@ void ArmDesc::emitFuncty(Functy f) {
         }
         (*it)->entry_label = getNewLabel(); // adds entry label of a basic block
     }
+    int param_cnt = 0;
+    for (Temp v: *((*g->begin())->LiveIn)) {
+        if (v->param_ord > 0 && v->param_ord < 5) {
+            int reg_idx = v->param_ord - 1;
+            // put self into target reg
+            _reg[reg_idx]->var = v;
+            _reg[reg_idx]->dirty = true;
+            // only do once
+            v->param_ord = 0;
+            param_cnt++;
+        }
+    }
+    knpc_assert(param_cnt <= 4);
     for (FlowGraph::iterator it = g->begin(); it != g->end(); ++it) {
         BasicBlock *b = *it;
         b->analyzeLiveness(); // computes LiveOut set of every TAC
@@ -910,13 +939,39 @@ void ArmDesc::simplePeephole(ArmInstr *iseq) {
 int ArmDesc::getRegForRead(Temp v, int avoid1, LiveSet *live) {
     std::ostringstream oss;
 
-    if (v->reg) {
-        int reg_idx = v->reg - 1;
-        spillReg(reg_idx, live);
-        _reg[reg_idx]->var = v;
-        v->reg = 0;
-        return reg_idx;
-    }
+    // if (v->param_ord) {
+        // if (v->param_ord > 0 && v->param_ord < 5) {
+        //     std::cout << "@" << v->param_ord << " " << v->id << std::endl;
+        //     int reg_idx = v->param_ord - 1;
+        //     // put self into target reg
+        //     _reg[reg_idx]->var = v;
+        //     _reg[reg_idx]->dirty = true;
+        //     // only do once
+        //     v->param_ord = 0;
+        //     return reg_idx;
+        // }
+        // on stack
+        // if (v->param_ord >= 5) {
+        //     int i = lookupReg(NULL);
+        //     if (i < 0) {
+        //         i = selectRegToSpill(avoid1, ArmReg::PC, live);
+        //         spillReg(i, live);
+        //     }
+        //     _reg[i]->var = v;
+        //     _reg[i]->dirty = true;
+
+        //     ArmReg *base = _reg[ArmReg::FP];
+        //     int offset = (v->param_ord - 5) << 2;
+        //     oss << "load param " << v << " from (" << base->name
+        //         << (offset < 0 ? "" : "+") << offset << ") into "
+        //         << _reg[i]->name;
+        //     addInstr(ArmInstr::LW, _reg[i], base, NULL, offset, EMPTY_STR,
+        //             oss.str());
+            
+        //     v->param_ord = 0;
+        //     return i;
+    //     }
+    // }
 
     int i = lookupReg(v);
 
