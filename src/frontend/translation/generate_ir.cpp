@@ -193,7 +193,7 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
         } else {                                                                    // 1.2 basetype && local
             Temp imm = tr->genLoadImm4(n->ctval);
             sym->attachTemp(imm); // if not global, alloc a temp variable to it
-        }
+        } // don't need? yes! have const propagation now. but will not effect performance, will be eliminated in dead code elimination.
     } else {                                                                        // 2 array type
         util::Vector<int> dimSize;
         int c_dim = 1;
@@ -203,13 +203,13 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
             c_dim = c_dim * (*it); 
         }
         util::Vector<int> initVals = get_array_constInitVals(ctx->constInitVal(), dims, dimSize, 0);
+        sym->setConst();
+        sym->setGlobalInit(initVals);
         int tag = 0;
         for(int i : initVals) {
             if(i != 0) tag = 1;
         }
         if(tag == 0) initVals.clear(); // if all zero then bss
-        sym->setConst();
-        sym->setGlobalInit(initVals);
         #ifdef debug_on
         printf("The array init values are: "); // debug
         for(size_t i = 0; i < initVals.size(); i++) printf("%d ", initVals[i]); // debug
@@ -226,7 +226,7 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
                 tr->genStore(x, arr, offset); // store initVals to arr in stack
                 offset += 4;
             }
-        }
+        } // don't need? no! if the index is not a const!
     }
     return nullptr;
 }
@@ -698,15 +698,11 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
         int ans = 0, len = str.length();
         for(int i = 0; i < len; ++i) ans = ans*10 + (str[i]^48);
         n = tr->genLoadImm4(ans);
-        n->ctval = ans;
-        n->isConst = true;
     } else if(ctx->Octal()) {
         std::string str = ctx->Octal()->getText();
         int ans = 0, len = str.length();
         for(int i = 1; i < len; ++i) ans = ans*8 + (str[i]^48);
         n = tr->genLoadImm4(ans);
-        n->ctval = ans;
-        n->isConst = true;
     } else if(ctx->Hexadecimal()) {
         std::string str = ctx->Hexadecimal()->getText();
         int ans = 0, len = str.length();
@@ -717,8 +713,6 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
             else ans = ans*16 + 10 + (str[i]-'a');
         }
         n = tr->genLoadImm4(ans);
-        n->ctval = ans;
-        n->isConst = true;
     } else {
         std::string str = ctx->FloatLiteral()->getText();
         n = tr->genLoadImm4(0); // TODO: Float here! now return 0
@@ -769,16 +763,22 @@ antlrcpp::Any SemPass1::visitUnary3(SysYParser::Unary3Context *ctx) {
     ctx->unaryOp()->accept(this);
     Temp r = tempStack.top();tempStack.pop();
     Temp n;
-    if(p_unaryOp == 0) {
-        n = r;
-    } else if(p_unaryOp == 1) {
-        n = tr->genNeg(r);
-        n->ctval = -1*r->ctval;
-        n->isConst = r->isConst;
+    if(r->isConst) {
+        if(p_unaryOp == 0) {
+            n = r;
+        } else if(p_unaryOp == 1) {
+            n = tr->genLoadImm4(-1*r->ctval);
+        } else {
+            n = tr->genLoadImm4(r->ctval == 0); // seqz
+        }
     } else {
-        n = tr->genLNot(r); // seqz
-        n->ctval = (r->ctval == 0);
-        n->isConst = r->isConst;
+        if(p_unaryOp == 0) {
+            n = r;
+        } else if(p_unaryOp == 1) {
+            n = tr->genNeg(r);
+        } else {
+            n = tr->genLNot(r); // seqz
+        }
     }
     tempStack.push(n);
     return nullptr;
@@ -802,17 +802,25 @@ antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
         ctx->unaryExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(ctx->children[1]->getText()[0] == '*') {
-            n = tr->genMul(l, r);
-            n->ctval = l->ctval*r->ctval;
-        } else if(ctx->children[1]->getText()[0] == '/') {
-            n = tr->genDiv(l, r);
-            if(r->ctval != 0) n->ctval = l->ctval / r->ctval;
+        if(r->isConst && l->isConst) {
+            if(ctx->children[1]->getText()[0] == '*') {
+                n = tr->genLoadImm4(l->ctval*r->ctval);
+            } else if(ctx->children[1]->getText()[0] == '/') {
+                knpc_assert(r->ctval);
+                n = tr->genLoadImm4(l->ctval / r->ctval);
+            } else {
+                knpc_assert(r->ctval);
+                n = tr->genLoadImm4(l->ctval % r->ctval);
+            }
         } else {
-            n = tr->genMod(l, r);
-            if(r->ctval != 0) n->ctval = l->ctval % r->ctval;
+            if(ctx->children[1]->getText()[0] == '*') {
+                n = tr->genMul(l, r);
+            } else if(ctx->children[1]->getText()[0] == '/') {
+                n = tr->genDiv(l, r);
+            } else {
+                n = tr->genMod(l, r);
+            }
         }
-        n->isConst = l->isConst && r->isConst;
     } else {
         ctx->unaryExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
@@ -829,14 +837,19 @@ antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
         ctx->mulExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(ctx->children[1]->getText()[0] == '+') {
-            n = tr->genAdd(l, r);
-            n->ctval = l->ctval + r->ctval;
+        if(r->isConst && l->isConst) {
+            if(ctx->children[1]->getText()[0] == '+') {
+                n = tr->genLoadImm4(l->ctval + r->ctval);
+            } else {
+                n = tr->genLoadImm4(l->ctval - r->ctval);
+            }
         } else {
-            n = tr->genSub(l, r);
-            n->ctval = l->ctval - r->ctval;
+            if(ctx->children[1]->getText()[0] == '+') {
+                n = tr->genAdd(l, r);
+            } else {
+                n = tr->genSub(l, r);
+            }
         }
-        n->isConst = l->isConst && r->isConst;
     } else {
         ctx->mulExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
@@ -853,12 +866,38 @@ antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
         ctx->addExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(ctx->children[1]->getText()[0] == '<') { // <
-            if(ctx->children[1]->getText().length() == 1) n = tr->genLes(l, r);
-            else n = tr->genLeq(l, r);
-        } else { // >
-            if(ctx->children[1]->getText().length() == 1) n = tr->genGtr(l, r);
-            else n = tr->genGeq(l, r);
+        if(r->isConst && l->isConst) {
+            if(ctx->children[1]->getText()[0] == '<') { // <
+                if(ctx->children[1]->getText().length() == 1) {
+                    n = tr->genLoadImm4(l->ctval < r->ctval);
+                }    
+                else {
+                    n = tr->genLoadImm4(l->ctval <= r->ctval);
+                }
+            } else { // >
+                if(ctx->children[1]->getText().length() == 1) {
+                    n = tr->genLoadImm4(l->ctval > r->ctval);
+                }
+                else {
+                    n = tr->genLoadImm4(l->ctval >= r->ctval);
+                }
+            }
+        } else {
+            if(ctx->children[1]->getText()[0] == '<') { // <
+                if(ctx->children[1]->getText().length() == 1) {
+                    n = tr->genLes(l, r);
+                }    
+                else {
+                    n = tr->genLeq(l, r);
+                }
+            } else { // >
+                if(ctx->children[1]->getText().length() == 1) {
+                    n = tr->genGtr(l, r);
+                }
+                else {
+                    n = tr->genGeq(l, r);
+                }
+            }
         }
     } else {
         ctx->addExp()->accept(this);
@@ -876,10 +915,18 @@ antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
         ctx->relExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
-        if(ctx->children[1]->getText()[0] == '=') {
-            n = tr->genEqu(l, r);
+        if(r->isConst && l->isConst) {
+            if(ctx->children[1]->getText()[0] == '=') {
+                n = tr->genLoadImm4(l->ctval == r->ctval);
+            } else {
+                n = tr->genLoadImm4(l->ctval != r->ctval);
+            }
         } else {
-            n = tr->genNeq(l, r);
+            if(ctx->children[1]->getText()[0] == '=') {
+                n = tr->genEqu(l, r);
+            } else {
+                n = tr->genNeq(l, r);
+            }
         }
     } else {
         ctx->relExp()->accept(this);
@@ -893,17 +940,31 @@ antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
 // LAnd, LOr, LNot: "L" means "Logic"
 antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) {
     Temp n;
-    if(ctx->lAndExp()) {
+    if(ctx->lAndExp()) { // TODO: const propagation
         ctx->lAndExp()->accept(this); // compute lreg
         Temp l = tempStack.top();tempStack.pop();
-        Label label = tr->getNewLabel();
-        tr->genJumpOnZero(label, l); // if left val false, jump
-        ctx->eqExp()->accept(this); // compute rreg
-        Temp r = tempStack.top();tempStack.pop();
-        n = tr->genLAnd(l, r); // get "and" result use lreg, rreg
-        tr->genAssign(l, n);   // assign result to lreg
-        tr->genMarkLabel(label);
-        n = l; // return lreg
+        if(l->isConst) {              // if lreg is const
+            if(l->ctval == 0) {
+                n = tr->genLoadImm4(0);
+            } else {                  // lreg is 1, the result depends on rreg
+                ctx->eqExp()->accept(this); // compute rreg
+                Temp r = tempStack.top();tempStack.pop();
+                n = r;
+            }
+        } else {
+            Temp v = tr->getNewTempI4();
+            tr->genAssign(v, l);
+            Label label = tr->getNewLabel();
+            tr->genJumpOnZero(label, l); // if left val false, jump
+            {
+                ctx->eqExp()->accept(this); // compute rreg
+                Temp r = tempStack.top();tempStack.pop();
+                n = tr->genLAnd(l, r); // get "and" result use lreg, rreg
+                tr->genAssign(v, n);   // assign result to vreg
+            }
+            tr->genMarkLabel(label); // jump here, not compute rreg
+            n = v; // return vreg
+        }
     } else {
         ctx->eqExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
@@ -915,18 +976,32 @@ antlrcpp::Any SemPass1::visitLAndExp(SysYParser::LAndExpContext *ctx) {
 
 antlrcpp::Any SemPass1::visitLOrExp(SysYParser::LOrExpContext *ctx) {
     Temp n;
-    if(ctx->lOrExp()) {
+    if(ctx->lOrExp()) { // TODO: const propagation
         ctx->lOrExp()->accept(this);
         Temp l = tempStack.top();tempStack.pop();
-        Label label = tr->getNewLabel();
-        Temp nl = tr->genLNot(l);
-        tr->genJumpOnZero(label, nl);
-        ctx->lAndExp()->accept(this);
-        Temp r = tempStack.top();tempStack.pop();
-        n = tr->genLOr(l, r);
-        tr->genAssign(l, n);
-        tr->genMarkLabel(label);
-        n = l;
+        if(l->isConst) {
+            if(l->ctval != 0) {
+                n = tr->genLoadImm4(1);
+            } else {                  // lreg is 0, the result depends on rreg
+                ctx->lAndExp()->accept(this);
+                Temp r = tempStack.top();tempStack.pop();
+                n = r;
+            }
+        } else {
+            Temp v = tr->getNewTempI4();
+            tr->genAssign(v, l);
+            Label label = tr->getNewLabel();
+            Temp nl = tr->genLNot(l);
+            tr->genJumpOnZero(label, nl);
+            {
+                ctx->lAndExp()->accept(this);
+                Temp r = tempStack.top();tempStack.pop();
+                n = tr->genLOr(l, r);
+                tr->genAssign(v, n);
+            }
+            tr->genMarkLabel(label);
+            n = v;
+        }
     } else {
         ctx->lAndExp()->accept(this);
         Temp r = tempStack.top();tempStack.pop();
