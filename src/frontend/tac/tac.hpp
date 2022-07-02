@@ -25,7 +25,7 @@ namespace tac{
         bool target;          // 是否是目标Label
         Tac *where;           // The TAC which marks this Label (for dataflow analysis)
     } * Label;
-
+    
     typedef struct FunctyObject
     {
         Label entry;        // 函数的入口Label
@@ -84,6 +84,7 @@ namespace tac{
             CALL,
             PARAM,
             ALLOC,
+            PHI,
         } Kind;
 
         // 操作数类型

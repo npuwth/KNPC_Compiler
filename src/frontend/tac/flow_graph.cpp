@@ -19,7 +19,7 @@ struct temp_less
     bool operator()(Temp t1, Temp t2) { return (t1->id < t2->id); }
 };
 
-/* Auxilliary function for printing variable sets.
+/* 打印变量的辅助函数
  *
  * PARAMETERS:
  *   os    - the output stream

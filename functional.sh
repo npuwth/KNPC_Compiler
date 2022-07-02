@@ -1,5 +1,5 @@
 COMPILER='./build/SysY'
-TEST_PATH='./functional'
+TEST_PATH='./performance_test2021'
 passed=0
 CE=0
 WA=0

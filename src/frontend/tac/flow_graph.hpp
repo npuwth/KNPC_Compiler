@@ -26,30 +26,28 @@ namespace knpc
 
         /**
          * Basic Block.
-         *
          * 基本块是最小的不包括跳转的代码块
-         * 
          */
         struct BasicBlock
         {
+            /*********************************** 基本定义 **************************************/
             int bb_num; // 基本块编号
-
             enum
             {
                 BY_JUMP,
                 BY_JZERO,
                 BY_RETURN
-            } end_kind; // 终止语句
+            } end_kind;     // 终止语句
 
-            int in_degree; // 入度
-            Temp var; // for END-BY-JZERO blocks, it is the condition variable;
-                      // for END-BY-RETURN blocks, it is the return value.
+            int in_degree;  // 入度
+            Temp var;       // 对于jzero语句块,var表示条件变量
+                            // 对于return语句块,var表示返回值
 
-            int next[2]; // the block number of the successors
-                         // for END-BY-JZERO blocks, next[0] is the successor
-                         //  of condition = 0, while next[1] is the successor
-                         //  of condition = 1;
-                         // for END-BY-JUMP blocks, next[0]=next[1]=successor
+            int next[2];        // 跳转块的编号
+                                // for END-BY-JZERO blocks, next[0] is the successor
+                                //  of condition = 0, while next[1] is the successor
+                                //  of condition = 1;
+                                // for END-BY-JUMP blocks, next[0]=next[1]=successor
 
             bool cancelled; // internal flag for FlowGraph
             int mark;       // internal flag for MachDesc
@@ -59,6 +57,8 @@ namespace knpc
             assembly::Instr *instr_chain; // for ASM code generation: the associated assembly code sequence
             const char *entry_label;      // for ASM code generation: the associated entry label in assembly code
 
+
+            /************************************ 活跃变量分析 ***********************************/
             util::Set<Temp> *Def;     // the DEF set: ALL variables defined in this block
             util::Set<Temp> *LiveUse; // the LiveUSE set: all used-before-defined variables
             util::Set<Temp> *LiveIn;  // the LiveIn set: all variables alive at the entry
@@ -69,13 +69,26 @@ namespace knpc
             // computes the DEF set and LiveUse set
             void computeDefAndLiveUse(void); // in tac/dataflow.cpp
             // computes the LiveOut set of every TAC inside (see also:
-            // FlowGraph::analyzeLiveness)
-            void analyzeLiveness(void); // in tac/dataflow.cpp
-            // prints this basic block
+            // 控制流图，活跃变量分析
+            void analyzeLiveness(void); 
+            // 打印基本块
             void dump(std::ostream &);
 
             void updateLU(Temp);
             void updateDEF(Temp);
+            /************************************ 支配树，SSA ***********************************/
+            //后继基本块
+            std::vector<BasicBlock *> succBlock;
+            //前驱基本块
+            std::vector<BasicBlock *> pioneerBlock;
+            //属于的函数体
+            BasicBlock *parent_ = nullptr;
+            //函数所控制的基本块
+            std::vector<BasicBlock *> domBlock;
+            //对应符号表中的函数
+            Functy *Func = nullptr;
+
+            std::list<int> InstrList;
         };
 
         /**
