@@ -12,12 +12,12 @@ do
 	$COMPILER ${source_file%.*}.sy > ${source_file%.*}.s
 	if [ $? == 0 ];
 	then
-		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s $TEST_PATH/sylib.c -o ${source_file%.*} -mcpu=cortex-a72 --static
+		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s $TEST_PATH/sylib.c -o ${source_file%.*}.exe -mcpu=cortex-a72 --static
 		if [ -f ${source_file%.*}.in ];
 		then
-			stdout=$(qemu-arm ${source_file%.*} < ${source_file%.*}.in)
+			stdout=$(qemu-arm ${source_file%.*}.exe < ${source_file%.*}.in)
 		else
-			stdout=$(qemu-arm ${source_file%.*})
+			stdout=$(qemu-arm ${source_file%.*}.exe)
 		fi
 		retval=$?
 		if [ -n "$stdout" ];
@@ -29,7 +29,8 @@ do
 		fi
 		result=$(cat ${source_file%.*}.result | tr -s "\n" " ")
 		answer=$(cat ${source_file%.*}.out | tr -s "\r\n" " ")
-		if [ "$result" == "$answer" ];
+		diff -b ${source_file%.*}.result ${source_file%.*}.out
+		if [ $? == 0 ];
 		then
 			printf "\e[32m%-20s testcase: %-30s (result: %-10s | answer: %-10s).\e[0m\n" "[PASSED]" ${source_file%.*} "$result" "$answer"
 			passed=$((passed + 1))
