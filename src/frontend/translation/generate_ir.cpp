@@ -203,13 +203,13 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
             c_dim = c_dim * (*it); 
         }
         util::Vector<int> initVals = get_array_constInitVals(ctx->constInitVal(), dims, dimSize, 0);
+        sym->setConst();
+        sym->setGlobalInit(initVals);
         int tag = 0;
         for(int i : initVals) {
             if(i != 0) tag = 1;
         }
         if(tag == 0) initVals.clear(); // if all zero then bss
-        sym->setConst();
-        sym->setGlobalInit(initVals);
         #ifdef debug_on
         printf("The array init values are: "); // debug
         for(size_t i = 0; i < initVals.size(); i++) printf("%d ", initVals[i]); // debug
@@ -698,15 +698,11 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
         int ans = 0, len = str.length();
         for(int i = 0; i < len; ++i) ans = ans*10 + (str[i]^48);
         n = tr->genLoadImm4(ans);
-        n->ctval = ans;
-        n->isConst = true;
     } else if(ctx->Octal()) {
         std::string str = ctx->Octal()->getText();
         int ans = 0, len = str.length();
         for(int i = 1; i < len; ++i) ans = ans*8 + (str[i]^48);
         n = tr->genLoadImm4(ans);
-        n->ctval = ans;
-        n->isConst = true;
     } else if(ctx->Hexadecimal()) {
         std::string str = ctx->Hexadecimal()->getText();
         int ans = 0, len = str.length();
@@ -717,8 +713,6 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
             else ans = ans*16 + 10 + (str[i]-'a');
         }
         n = tr->genLoadImm4(ans);
-        n->ctval = ans;
-        n->isConst = true;
     } else {
         std::string str = ctx->FloatLiteral()->getText();
         n = tr->genLoadImm4(0); // TODO: Float here! now return 0
