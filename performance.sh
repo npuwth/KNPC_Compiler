@@ -1,5 +1,5 @@
 COMPILER='./build/SysY'
-TEST_PATH='./performance'
+TEST_PATH='./performance_test2021'
 passed=0
 CE=0
 WA=0
@@ -32,10 +32,10 @@ do
 		diff -b ${source_file%.*}.result ${source_file%.*}.out
 		if [ $? == 0 ];
 		then
-			printf "\e[32m%-20s testcase: %-30s (result: %-10s | answer: %-10s).\e[0m\n" "[PASSED]" ${source_file%.*} "$result" "$answer"
+			printf "\e[32m%-20s testcase: %-30s .\e[0m\n" "[PASSED]" ${source_file%.*} 
 			passed=$((passed + 1))
 		else
-			printf "\e[31m%-20s testcase: %-30s (result: %-10s | answer: %-10s).\e[0m\n" "[WRONG ANSWER]" ${source_file%.*} "$result" "$answer"
+			printf "\e[31m%-20s testcase: %-30s .\e[0m\n" "[WRONG ANSWER]" ${source_file%.*} 
 			WA=$((WA + 1))
 		fi
 	else
