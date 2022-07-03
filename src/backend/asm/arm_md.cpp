@@ -697,7 +697,7 @@ void ArmDesc::emitInstr(ArmInstr *i) {
     case ArmInstr::LI:
         //oss << "ldr" << i->r0->name << ", =" << i->i;
         if (0 <= i->i && i->i <= 0xffff) {
-            oss << "movw" << i->r0->name << ", #:lower16:" << i->i;
+            oss << "mov" << i->r0->name << ", #" << i->i;
         } else {
             oss << "movw" << i->r0->name << ", #:lower16:" << i->i;
             emit(EMPTY_STR, oss.str().c_str(), EMPTY_STR.c_str());
@@ -708,7 +708,7 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         break;
     
     case ArmInstr::CLR:
-        oss << "movw" << i->r0->name << ", #0";
+        oss << "mov" << i->r0->name << ", #0";
         break;
 
     case ArmInstr::NEG:
