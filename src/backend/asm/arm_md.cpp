@@ -239,8 +239,8 @@ void ArmDesc::emitTac(Tac *t) {
 
     case Tac::LNOT:
         emitUnaryTac(ArmInstr::TEQZ, t); // 与0相等测试
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SEQ, t);
-        emitUnaryTac(ArmInstr::CNE, t);
         break;
     
     case Tac::NEG:
@@ -248,39 +248,39 @@ void ArmDesc::emitTac(Tac *t) {
         break;
 
     case Tac::EQU:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SEQ, t);
-        emitUnaryTac(ArmInstr::CNE, t);
         break;
     
     case Tac::NEQ:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SNE, t);
-        emitUnaryTac(ArmInstr::CEQ, t);
         break;
         
     case Tac::LES:
-	    emitBinaryTac(ArmInstr::SUBS, t);
+	    emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
 	    emitUnaryTac(ArmInstr::SLT, t);
-	    emitUnaryTac(ArmInstr::CGE, t);
         break;
 
     case Tac::LEQ:
-	    emitBinaryTac(ArmInstr::SUBS, t);
+	    emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
 	    emitUnaryTac(ArmInstr::SLE, t);
-	    emitUnaryTac(ArmInstr::CGT, t);
         break;
 
     case Tac::GEQ:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SGE, t);
-        emitUnaryTac(ArmInstr::CLT, t);
         break;
 
     case Tac::GTR:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SGT, t);
-        emitUnaryTac(ArmInstr::CLE, t);
         break;
     
     case Tac::LAND:
@@ -308,8 +308,7 @@ void ArmDesc::emitTac(Tac *t) {
         break;
 
     case Tac::MOD:
-        emitBinaryTac(ArmInstr::DIV, t);
-        emitBinaryTac(ArmInstr::INPLACE_MLS, t);
+        emitBinaryTac(ArmInstr::MOD, t);
         break;
 
     case Tac::ASSIGN:
@@ -707,6 +706,10 @@ void ArmDesc::emitInstr(ArmInstr *i) {
             oss << "movt" << i->r0->name << ", #:upper16:" << i->i;
         }
         break;
+    
+    case ArmInstr::CLR:
+        oss << "movw" << i->r0->name << ", #0";
+        break;
 
     case ArmInstr::NEG:
         oss << "neg" << i->r0->name << ", " << i->r1->name;
@@ -723,17 +726,9 @@ void ArmDesc::emitInstr(ArmInstr *i) {
     case ArmInstr::SEQ:
         oss << "moveq" << i->r0->name << ", #1";
         break;
-    
-    case ArmInstr::CEQ:
-        oss << "moveq" << i->r0->name << ", #0";
-        break;
 
     case ArmInstr::SNE:
         oss << "movne" << i->r0->name << ", #1";
-        break;
-    
-    case ArmInstr::CNE:
-        oss << "movne" << i->r0->name << ", #0";
         break;
 
     case ArmInstr::MV:
@@ -790,38 +785,18 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         oss << "movlt" << i->r0->name << ", #1";
         break;
     
-    case ArmInstr::CLT:
-        oss << "movlt" << i->r0->name << ", #0";
-        break;
-    
     case ArmInstr::SLE:
         oss << "movle" << i->r0->name << ", #1";
         break;
-    
-    case ArmInstr::CLE:
-        oss << "movle" << i->r0->name << ", #0";
-        break;
-    
-    // case ArmInstr::SLTU:
-    //     oss << "sltu" << i->r0->name << ", " << i->r1->name << "," << i->r2->name;
-    //     break;
 
     case ArmInstr::SGT:
         oss << "movgt" << i->r0->name << ", #1";
-        break;
-
-    case ArmInstr::CGT:
-        oss << "movgt" << i->r0->name << ", #0";
         break;
     
     case ArmInstr::SGE:
         oss << "movge" << i->r0->name << ", #1";
         break;
 
-    case ArmInstr::CGE:
-        oss << "movge" << i->r0->name << ", #0";
-        break;
-    
     case ArmInstr::XOR:
         oss << "eor" << i->r0->name << ", " << i->r0->name << "," <<  "0x1";
         break;
@@ -846,8 +821,8 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         oss << "sub" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
         break;
     
-    case ArmInstr::SUBS:
-        oss << "subs" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
+    case ArmInstr::CMP:
+        oss << "cmp" << i->r1->name << ", " << i->r2->name;
         break;
 
     case ArmInstr::MUL:
@@ -858,7 +833,12 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         oss << "sdiv" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
         break;
     
-    case ArmInstr::INPLACE_MLS:
+    case ArmInstr::MOD:
+        knpc_assert(i->r0->name != i->r1->name && i->r0->name != i->r2->name);
+        oss << "sdiv" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
+        emit(EMPTY_STR, oss.str().c_str(), EMPTY_STR.c_str());
+        oss.str("");
+        oss << std::left << std::setw(6);
         oss << "mls" << i->r0->name << ", " << i->r0->name << ", " << i->r2->name << ", " << i->r1->name;
         break;
 
