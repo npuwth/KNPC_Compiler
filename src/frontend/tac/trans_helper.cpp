@@ -160,13 +160,14 @@ Tac *TransHelper::memoOf(Function *f) {
             Temp t = v->getTemp();
 
             knpc_assert(NULL != t); // it should have been created in TransPass1
-            if (v->getOrder() < 4) {
-                t->reg = v->getOrder() + 1;
-                oss << t << ": A" << t->reg << " ";
+            t->param_ord = v->getOrder() + 1;
+            if (t->param_ord <= 4) {
+                oss << t << ": A" << t->param_ord << " ";
+                t->is_offset_fixed = false;
             } else {
+                oss << t << ": " << t->offset - 16 << " ";
                 t->offset = v->offset - 16;
                 t->is_offset_fixed = true;
-                oss << t << ": " << t->offset << " ";
             }
         }
     }
