@@ -239,8 +239,8 @@ void ArmDesc::emitTac(Tac *t) {
 
     case Tac::LNOT:
         emitUnaryTac(ArmInstr::TEQZ, t); // 与0相等测试
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SEQ, t);
-        emitUnaryTac(ArmInstr::CNE, t);
         break;
     
     case Tac::NEG:
@@ -248,39 +248,39 @@ void ArmDesc::emitTac(Tac *t) {
         break;
 
     case Tac::EQU:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SEQ, t);
-        emitUnaryTac(ArmInstr::CNE, t);
         break;
     
     case Tac::NEQ:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SNE, t);
-        emitUnaryTac(ArmInstr::CEQ, t);
         break;
         
     case Tac::LES:
-	    emitBinaryTac(ArmInstr::SUBS, t);
+	    emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
 	    emitUnaryTac(ArmInstr::SLT, t);
-	    emitUnaryTac(ArmInstr::CGE, t);
         break;
 
     case Tac::LEQ:
-	    emitBinaryTac(ArmInstr::SUBS, t);
+	    emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
 	    emitUnaryTac(ArmInstr::SLE, t);
-	    emitUnaryTac(ArmInstr::CGT, t);
         break;
 
     case Tac::GEQ:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SGE, t);
-        emitUnaryTac(ArmInstr::CLT, t);
         break;
 
     case Tac::GTR:
-        emitBinaryTac(ArmInstr::SUBS, t);
+        emitBinaryTac(ArmInstr::CMP, t);
+        emitUnaryTac(ArmInstr::CLR, t);
         emitUnaryTac(ArmInstr::SGT, t);
-        emitUnaryTac(ArmInstr::CLE, t);
         break;
     
     case Tac::LAND:
@@ -308,8 +308,7 @@ void ArmDesc::emitTac(Tac *t) {
         break;
 
     case Tac::MOD:
-        emitBinaryTac(ArmInstr::DIV, t);
-        emitBinaryTac(ArmInstr::INPLACE_MLS, t);
+        emitBinaryTac(ArmInstr::MOD, t);
         break;
 
     case Tac::ASSIGN:
@@ -322,7 +321,7 @@ void ArmDesc::emitTac(Tac *t) {
         //knpc_assert(false);
 
     case Tac::POP:
-        addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, 4, EMPTY_STR, EMPTY_STR);
+        addInstr(ArmInstr::ADD, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, 4, EMPTY_STR, EMPTY_STR);
         break;
 
     case Tac::CALL: 
@@ -365,14 +364,15 @@ void ArmDesc::emitCallTac(Tac *t) {
     // save registers
     Temp saved[16] = {NULL};
     int saved_cnt = 0;
+    short reglist = 0;
     for(int idx = 0; idx < ArmReg::TOTAL_NUM; idx++) {
         if((idx < 4 || _reg[idx]->general) && _reg[idx]->var != NULL && t->LiveOut->contains(_reg[idx]->var)) {
             saved_cnt++;
             saved[idx] = _reg[idx]->var;
-            addInstr(ArmInstr::SW,  _reg[idx], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, ((std::string)("save register r") + std::to_string(idx)).c_str());
+            reglist |= (1 << idx);
         }
     }
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -(saved_cnt << 2), EMPTY_STR, EMPTY_STR);
+    addRegListInstr(ArmInstr::PUSH, reglist, (std::string)("save register"));
 
     // preparing the parameters
     int param_cnt = 0;
@@ -381,10 +381,10 @@ void ArmDesc::emitCallTac(Tac *t) {
         LiveInternal->add(it->op0.var);
         param_cnt++;
     }
-    // Temp spilled[4] = {NULL};
+
     if(param_cnt > 0) {
         if (param_cnt > 4) {
-            addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -((param_cnt - 4) << 2), EMPTY_STR, EMPTY_STR);
+            addInstr(ArmInstr::ADD, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -((param_cnt - 4) << 2), EMPTY_STR, EMPTY_STR);
         }
         int current_idx = param_cnt;
         for(Tac *it = t->prev; it != NULL && it->op_code == Tac::PARAM; it = it->prev) {
@@ -392,7 +392,6 @@ void ArmDesc::emitCallTac(Tac *t) {
             int r1 = getRegForRead(it->op0.var, 0, LiveInternal);
             if (current_idx < 4) {
                 if(current_idx != r1) {
-                    // spilled[current_idx] = _reg[current_idx]->var;
                     spillReg(current_idx, LiveInternal);
                     addInstr(ArmInstr::MV,  _reg[current_idx], _reg[r1], NULL, 0, EMPTY_STR, EMPTY_STR);
                     _reg[current_idx]->var = it->op0.var;
@@ -411,8 +410,9 @@ void ArmDesc::emitCallTac(Tac *t) {
     _reg[ArmReg::A1]->var = t->op0.var;
     _reg[ArmReg::A1]->dirty = true;
 
-    int recycle_size = (param_cnt > 4 ? (param_cnt - 4) << 2 : 0) + (saved_cnt << 2);
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, recycle_size, EMPTY_STR, EMPTY_STR);
+    if(param_cnt > 4) {
+        addInstr(ArmInstr::ADD, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, (param_cnt - 4) << 2, EMPTY_STR, EMPTY_STR);
+    }
 
     // restore registers
     int restored_cnt = 0;
@@ -425,48 +425,28 @@ void ArmDesc::emitCallTac(Tac *t) {
                 }
                 _reg[idx]->var = saved[idx];
             }
-            addInstr(ArmInstr::LW,  _reg[idx], _reg[ArmReg::SP], NULL, -(restored_cnt << 2), EMPTY_STR, ((std::string)("restore register r") + std::to_string(idx)).c_str());
         } else if(idx != 0) {
             _reg[idx]->var = NULL;
         }
     }
-
-    // // restore A1~A4
-    // for(int idx = 0; idx < (param_cnt < 4 ? param_cnt : 4); idx++) {
-    //     if(spilled[idx] != NULL && t->LiveOut->contains(spilled[idx])) {
-    //         spillReg(idx, t->LiveOut);
-    //         knpc_assert(spilled[idx]->is_offset_fixed);
-    //         ArmReg *base = _reg[ArmReg::FP];
-    //         std::stringstream oss;
-    //         oss << "load " << spilled[idx] << " from (" << base->name
-    //             << (spilled[idx]->offset < 0 ? "" : "+") << spilled[idx]->offset << ") into "
-    //             << _reg[idx]->name;
-    //         addInstr(ArmInstr::LW, _reg[idx], base, NULL, spilled[idx]->offset, EMPTY_STR,
-    //                 oss.str());
-    //         _reg[idx]->var = spilled[idx];
-    //     }
-    // }
+    addRegListInstr(ArmInstr::POP, reglist, (std::string)("restore register"));
 
 }
 
 
 void ArmDesc::emitPushTac(Tac *t) {
     int r1 = getRegForRead(t->op0.var, 0, t->LiveOut);
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -4, EMPTY_STR, EMPTY_STR);
-    addInstr(ArmInstr::SW,  _reg[r1], _reg[ArmReg::SP], NULL, 0, EMPTY_STR, EMPTY_STR);
+    addRegListInstr(ArmInstr::PUSH, (1 << r1), EMPTY_STR);
 }
 
 void ArmDesc::emitAllocTac(Tac *t) {
     if (!t->LiveOut->contains(t->op0.var))
         return;
     int r0 = getRegForWrite(t->op0.var, 0, 0, t->LiveOut);
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -t->op1.size, EMPTY_STR, EMPTY_STR);
+    addInstr(ArmInstr::ADD, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, -t->op1.size, EMPTY_STR, EMPTY_STR);
     addInstr(ArmInstr::MV, _reg[r0], _reg[ArmReg::SP], NULL, 0, EMPTY_STR, EMPTY_STR);
 }
 
-/*void ArmDesc::emitPopTac(Tac *t) {
-    addInstr(ArmInstr::ADDI, _reg[ArmReg::SP], _reg[ArmReg::SP], NULL, 4, EMPTY_STR, NULL);
-}*/
 
 
 
@@ -684,8 +664,19 @@ void ArmDesc::emitProlog(Label entry_label, int frame_size) {
     emit(EMPTY_STR, "str    fp, [sp, #-8]", NULL); // saves return address
     // establishes new stack frame (new context)
     emit(EMPTY_STR, "mov    fp, sp", NULL);
-    oss << "add  sp, sp, #-" << (frame_size + 2 * WORD_SIZE); // 2 WORD's for old $fp and $ra
-    emit(EMPTY_STR, oss.str().c_str(), NULL);
+    int stack_size = frame_size + 2 * WORD_SIZE;
+    if (stack_size < 4095) {
+        oss << "add  sp, sp, #-" << stack_size; // 2 WORD's for old $fp and $ra
+        emit(EMPTY_STR, oss.str().c_str(), NULL);
+    } else {
+        oss << "movw   v1, #:lower16:-" << stack_size;
+        emit(EMPTY_STR, oss.str().c_str(), NULL);
+        oss.str("");
+        oss << "movt   v1, #:upper16:-" << stack_size;
+        emit(EMPTY_STR, oss.str().c_str(), NULL);
+        oss.str("");
+        emit(EMPTY_STR, "add  sp, sp, v1", NULL);
+    }
 }
 
 /* Outputs a single instruction.
@@ -704,7 +695,20 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         return;
     
     case ArmInstr::LI:
-        oss << "ldr" << i->r0->name << ", =" << i->i;
+        //oss << "ldr" << i->r0->name << ", =" << i->i;
+        if (0 <= i->i && i->i <= 0xffff) {
+            oss << "mov" << i->r0->name << ", #" << i->i;
+        } else {
+            oss << "movw" << i->r0->name << ", #:lower16:" << i->i;
+            emit(EMPTY_STR, oss.str().c_str(), EMPTY_STR.c_str());
+            oss.str("");
+            oss << std::left << std::setw(6);
+            oss << "movt" << i->r0->name << ", #:upper16:" << i->i;
+        }
+        break;
+    
+    case ArmInstr::CLR:
+        oss << "mov" << i->r0->name << ", #0";
         break;
 
     case ArmInstr::NEG:
@@ -722,17 +726,9 @@ void ArmDesc::emitInstr(ArmInstr *i) {
     case ArmInstr::SEQ:
         oss << "moveq" << i->r0->name << ", #1";
         break;
-    
-    case ArmInstr::CEQ:
-        oss << "moveq" << i->r0->name << ", #0";
-        break;
 
     case ArmInstr::SNE:
         oss << "movne" << i->r0->name << ", #1";
-        break;
-    
-    case ArmInstr::CNE:
-        oss << "movne" << i->r0->name << ", #0";
         break;
 
     case ArmInstr::MV:
@@ -740,11 +736,37 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         break;
 
     case ArmInstr::LW:
-        oss << "ldr" << i->r0->name << ", " << "[" << i->r1->name << ", #" << i->i << "]";
+        if (-256 < i->i && i->i < 256) {
+            oss << "ldr" << i->r0->name << ", " << "[" << i->r1->name << ", #" << i->i << "]";
+        } else {
+            knpc_assert(i->r0->name != i->r1->name);
+            oss << "movw" << i->r0->name << ", #:lower16:" << i->i;
+            emit(EMPTY_STR, oss.str().c_str(), "IMM exceeds -255~255, load to register first");
+            oss.str("");
+            oss << std::left << std::setw(6);
+            oss << "movt" << i->r0->name << ", #:upper16:" << i->i;
+            emit(EMPTY_STR, oss.str().c_str(), EMPTY_STR.c_str());
+            oss.str("");
+            oss << std::left << std::setw(6);
+            oss << "ldr" << i->r0->name << ", " << "[" << i->r0->name << ", " << i->r1->name << "]";
+        }
         break;
 
     case ArmInstr::SW:
-        oss << "str" << i->r0->name << ", " << "[" << i->r1->name << ", #" << i->i << "]";
+        if (-256 < i->i && i->i < 256) {
+            oss << "str" << i->r0->name << ", " << "[" << i->r1->name << ", #" << i->i << "]";
+        } else {
+            knpc_assert(i->r0->name != i->r1->name);
+            oss << "movw" << i->r0->name << ", #:lower16:" << i->i;
+            emit(EMPTY_STR, oss.str().c_str(), "IMM exceeds -255~255, load to register first");
+            oss.str("");
+            oss << std::left << std::setw(6);
+            oss << "movt" << i->r0->name << ", #:upper16:" << i->i;
+            emit(EMPTY_STR, oss.str().c_str(), EMPTY_STR.c_str());
+            oss.str("");
+            oss << std::left << std::setw(6);
+            oss << "str" << i->r0->name << ", " << "[" << i->r0->name << ", " << i->r1->name << "]";
+        }
         break;
     
     case ArmInstr::RET:
@@ -763,56 +785,44 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         oss << "movlt" << i->r0->name << ", #1";
         break;
     
-    case ArmInstr::CLT:
-        oss << "movlt" << i->r0->name << ", #0";
-        break;
-    
     case ArmInstr::SLE:
         oss << "movle" << i->r0->name << ", #1";
         break;
-    
-    case ArmInstr::CLE:
-        oss << "movle" << i->r0->name << ", #0";
-        break;
-    
-    // case ArmInstr::SLTU:
-    //     oss << "sltu" << i->r0->name << ", " << i->r1->name << "," << i->r2->name;
-    //     break;
 
     case ArmInstr::SGT:
         oss << "movgt" << i->r0->name << ", #1";
-        break;
-
-    case ArmInstr::CGT:
-        oss << "movgt" << i->r0->name << ", #0";
         break;
     
     case ArmInstr::SGE:
         oss << "movge" << i->r0->name << ", #1";
         break;
 
-    case ArmInstr::CGE:
-        oss << "movge" << i->r0->name << ", #0";
-        break;
-    
     case ArmInstr::XOR:
         oss << "eor" << i->r0->name << ", " << i->r0->name << "," <<  "0x1";
         break;
 
     case ArmInstr::ADD:
-        oss << "add" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
-        break;
-
-    case ArmInstr::ADDI:
-        oss << "add" << i->r0->name << ", " << i->r1->name << ", #"<< i->i;
+        
+        if (i->i == 0) {
+            oss << "add" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
+        } else if (-4096 < i->i && i->i < 4096) {
+            oss << "add" << i->r0->name << ", " << i->r1->name << ", #"<< i->i;
+        } else {
+            knpc_assert(i->r0->name != i->r1->name);
+            oss << "ldr" << i->r0->name << ", =" << i->i;
+            emit(EMPTY_STR, oss.str().c_str(), "IMM exceeds -4095~4095, load to register first");
+            oss.str("");
+            oss << std::left << std::setw(6);
+            oss << "add" << i->r0->name << ", " << i->r0->name << ", " << i->r1->name;
+        }
         break;
     
     case ArmInstr::SUB:
         oss << "sub" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
         break;
     
-    case ArmInstr::SUBS:
-        oss << "subs" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
+    case ArmInstr::CMP:
+        oss << "cmp" << i->r1->name << ", " << i->r2->name;
         break;
 
     case ArmInstr::MUL:
@@ -823,7 +833,12 @@ void ArmDesc::emitInstr(ArmInstr *i) {
         oss << "sdiv" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
         break;
     
-    case ArmInstr::INPLACE_MLS:
+    case ArmInstr::MOD:
+        knpc_assert(i->r0->name != i->r1->name && i->r0->name != i->r2->name);
+        oss << "sdiv" << i->r0->name << ", " << i->r1->name << ", " << i->r2->name;
+        emit(EMPTY_STR, oss.str().c_str(), EMPTY_STR.c_str());
+        oss.str("");
+        oss << std::left << std::setw(6);
         oss << "mls" << i->r0->name << ", " << i->r0->name << ", " << i->r2->name << ", " << i->r1->name;
         break;
 
@@ -845,6 +860,40 @@ void ArmDesc::emitInstr(ArmInstr *i) {
     
     case ArmInstr::MOVT:
         oss << "movt" << i->r0->name << ", #:upper16:" << i->l;
+        break;
+
+    case ArmInstr::PUSH:
+        if (i->reglist != 0) {
+            oss << "push" << "{";
+            bool first = true;
+            for (int idx = 0; idx < ArmReg::TOTAL_NUM; idx++) {
+                if ((i->reglist >> idx) & 1) {
+                    if (!first) {
+                        oss << ",";
+                    }
+                    oss << _reg[idx]->name;
+                    first = false;
+                }
+            }
+            oss << "}";
+        }
+        break;
+    
+    case ArmInstr::POP:
+        if (i->reglist != 0) {
+            oss << "pop" << "{";
+            bool first = true;
+            for (int idx = 0; idx < ArmReg::TOTAL_NUM; idx++) {
+                if ((i->reglist >> idx) & 1) {
+                    if (!first) {
+                        oss << ",";
+                    }
+                    oss << _reg[idx]->name;
+                    first = false;
+                }
+            }
+            oss << "}";
+        }
         break;
 
     default:
@@ -905,6 +954,8 @@ void ArmDesc::addInstr(ArmInstr::OpCode op_code, ArmReg *r0, ArmReg *r1,
                          ArmReg *r2, int i, std::string l, std::string cmt) {
     knpc_assert(NULL != _tail);
 
+    knpc_assert(op_code != ArmInstr::PUSH && op_code != ArmInstr::POP);
+
     // we should eliminate all the comments when doing optimization
     if (Option::doOptimize() && (ArmInstr::COMMENT == op_code))
         return;
@@ -916,6 +967,19 @@ void ArmDesc::addInstr(ArmInstr::OpCode op_code, ArmReg *r0, ArmReg *r1,
     _tail->r2 = r2;
     _tail->i = i;
     _tail->l = l;
+    _tail->comment = cmt;
+}
+
+void ArmDesc::addRegListInstr(ArmInstr::OpCode op_code, short reglist, std::string cmt) {
+    knpc_assert(NULL != _tail);
+
+    // we should eliminate all the comments when doing optimization
+    if (Option::doOptimize() && (ArmInstr::COMMENT == op_code))
+        return;
+    _tail->next = new ArmInstr();
+    _tail = _tail->next;
+    _tail->op_code = op_code;
+    _tail->reglist = reglist;
     _tail->comment = cmt;
 }
 
@@ -946,40 +1010,6 @@ void ArmDesc::simplePeephole(ArmInstr *iseq) {
  */
 int ArmDesc::getRegForRead(Temp v, int avoid1, LiveSet *live) {
     std::ostringstream oss;
-
-    // if (v->param_ord) {
-    //     if (v->param_ord > 0 && v->param_ord < 5) {
-    //         std::cout << "@" << v->param_ord << " " << v->id << std::endl;
-    //         int reg_idx = v->param_ord - 1;
-    //         // put self into target reg
-    //         _reg[reg_idx]->var = v;
-    //         _reg[reg_idx]->dirty = true;
-    //         // only do once
-    //         v->param_ord = 0;
-    //         return reg_idx;
-    //     }
-    //     // on stack
-    //     if (v->param_ord >= 5) {
-    //         int i = lookupReg(NULL);
-    //         if (i < 0) {
-    //             i = selectRegToSpill(avoid1, ArmReg::PC, live);
-    //             spillReg(i, live);
-    //         }
-    //         _reg[i]->var = v;
-    //         _reg[i]->dirty = true;
-
-    //         ArmReg *base = _reg[ArmReg::FP];
-    //         int offset = (v->param_ord - 5) << 2;
-    //         oss << "load param " << v << " from (" << base->name
-    //             << (offset < 0 ? "" : "+") << offset << ") into "
-    //             << _reg[i]->name;
-    //         addInstr(ArmInstr::LW, _reg[i], base, NULL, offset, EMPTY_STR,
-    //                 oss.str());
-            
-    //         v->param_ord = 0;
-    //         return i;
-    //     }
-    // }
 
     int i = lookupReg(v);
 

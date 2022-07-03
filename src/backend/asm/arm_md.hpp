@@ -71,12 +71,11 @@ struct ArmInstr : public Instr {
         OR,
         XOR,
         ADD,
-        ADDI,
         SUB,
-        SUBS,
+        CMP,
         MUL,
         DIV,
-        INPLACE_MLS,
+        MOD,
         NEG,
         J,
         BEQ,
@@ -85,28 +84,25 @@ struct ArmInstr : public Instr {
         LI,
         SW,
         MV,
+        CLR,
         NOT, //BNOT
         TEQZ,
         SEQ,
-        CEQ,
         SNE,
-        CNE,
         SLT,
-        CLT,
         SLE,
-        CLE,
-        // SLTU,
         SGT,
-        CGT,
         SGE,
-        CGE,
         CALL,
         MOVW,
         MOVT,
+        PUSH,
+        POP,
         // You could add other instructions/pseudo instructions here
     } op_code; // operation code
 
     ArmReg *r0, *r1, *r2; // 3 register operands
+    short reglist;
     int i;                  // offset or immediate number
     std::string l;          // target label. for LA, B, BEQZ or JAL
     std::string comment;    // comment in this line
@@ -182,6 +178,7 @@ class ArmDesc : public MachineDesc {
     // appends a new instruction to "_tail"
     void addInstr(ArmInstr::OpCode, ArmReg *, ArmReg *, ArmReg *, int,
                   std::string, std::string);
+    void addRegListInstr(ArmInstr::OpCode, short reglist, std::string);
 
 
     /*** sketch for peephole optimizer (inside a basic block) ***/
