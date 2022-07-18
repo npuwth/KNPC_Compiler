@@ -458,19 +458,35 @@ antlrcpp::Any SemPass1::visitBlockItem(SysYParser::BlockItemContext *ctx) {
 }
 
 antlrcpp::Any SemPass1::visitIfStmt (SysYParser::IfStmtContext *ctx) {
-    Label L1 = tr->getNewLabel();
-    Label L2 = tr->getNewLabel();
+    knpc_assert(ctx->cond());
     ctx->cond()->accept(this);
-    tr->genJumpOnZero(L1, tempStack.top());
-    tempStack.pop();
-    auto it = ctx->stmt()[0];
-    knpc_assert(it);
-    it->accept(this); // true branch
-    tr->genJump(L2);
-    tr->genMarkLabel(L1);
-    it = ctx->stmt()[1];
-    if(it) it->accept(this); // false branch
-    tr->genMarkLabel(L2);
+    Temp n = tempStack.top();tempStack.pop();
+    if(n->isConst) { // constant folding
+        if(n->ctval) { // true branch
+            auto it = ctx->stmt()[0];
+            knpc_assert(it);
+            it->accept(this);
+        } else { // false branch
+            auto it = ctx->stmt()[1];
+            if(it) it->accept(this);
+        }
+    } else {
+        Label L1 = tr->getNewLabel();
+        Label L2 = tr->getNewLabel();
+        tr->genJumpOnZero(L1, n);
+        { // true branch
+            auto it = ctx->stmt()[0];
+            knpc_assert(it);
+            it->accept(this);
+        }
+        tr->genJump(L2);
+        tr->genMarkLabel(L1);
+        { // false branch
+            auto it = ctx->stmt()[1];
+            if(it) it->accept(this);
+        }
+        tr->genMarkLabel(L2);
+    }
     return nullptr;
 }
 
@@ -502,12 +518,21 @@ antlrcpp::Any SemPass1::visitWhileStmt (SysYParser::WhileStmtContext *ctx) {
     tr->genMarkLabel(L1);
     knpc_assert(ctx->cond());
     ctx->cond()->accept(this);
-    tr->genJumpOnZero(L2, tempStack.top()); // if flase goto L2, loop end
-    tempStack.pop();
-    if(ctx->stmt()) ctx->stmt()->accept(this);
-    tr->genJump(L1);
-    tr->genMarkLabel(L2);
-
+    Temp n = tempStack.top();tempStack.pop();
+    if(n->isConst) {
+        if(n->ctval) { // always true, in this case, cond()'s compute is unneed, and it will be removed in alive val analysis, so there's no influence.  
+            if(ctx->stmt()) ctx->stmt()->accept(this);
+            tr->genJump(L1);
+        } else { // always false
+            ;
+        }
+    } else {
+        tr->genJumpOnZero(L2, n); // if flase goto L2, loop end
+        if(ctx->stmt()) ctx->stmt()->accept(this);
+        tr->genJump(L1);
+        tr->genMarkLabel(L2);
+    }
+    
     current_break_label = old_break; // restore break&continue label
     current_continue_label = old_continue;
     return nullptr;
