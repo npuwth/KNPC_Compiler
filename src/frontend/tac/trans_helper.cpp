@@ -541,6 +541,13 @@ Temp TransHelper::genLoadImm4(int value) {
     return c;
 }
 
+Temp TransHelper::genLoadImm4NoChainUp(int value) { // used when get array initvals to pad zeroes
+    Temp c = getNewTempI4();
+    c->isConst = true;
+    c->ctval = value;
+    return c;
+}
+
 Temp TransHelper::genLoadSymbol(std::string label){
     Temp c = getNewTempI4();
     chainUp(Tac::LoadSymbol(c, label));

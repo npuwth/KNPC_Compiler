@@ -75,6 +75,7 @@ class TransHelper {
     // Miscellaneous 其他       important
     void genAssign(Temp, Temp);
     Temp genLoadImm4(int);
+    Temp genLoadImm4NoChainUp(int);
     Temp genLoadSymbol(std::string);
     Temp genLoad(Temp, int);
     void genStore(Temp, Temp, int);

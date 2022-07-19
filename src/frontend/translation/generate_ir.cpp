@@ -18,7 +18,7 @@ std::string p_name = "initial";
 size_t p_unaryOp = 0;
 int order = 0; // used in funcDef
 util::Stack<Temp> tempStack;
-Label runtimeLabels[9];
+Label runtimeLabels[10];
 
 tac::Label current_break_label;
 tac::Label current_continue_label;
@@ -92,7 +92,7 @@ util::Vector<Temp> SemPass1::get_array_initVals(SysYParser::InitValContext *ctx,
         }
         int j = ret.size();
         while(j < dims[d] * dimSize[d]) { // pad zero in a { }
-            Temp imm = tr->genLoadImm4(0);
+            Temp imm = tr->genLoadImm4NoChainUp(0);
             ret.push_back(imm);
             j++;
         }
@@ -110,6 +110,14 @@ void SemPass1::initRunTimeLabels() { // 9 runtime library functions
     runtimeLabels[6] = tr->getNewEntryLabel("putf");
     runtimeLabels[7] = tr->getNewEntryLabel("_sysy_starttime");
     runtimeLabels[8] = tr->getNewEntryLabel("_sysy_stoptime");
+    runtimeLabels[9] = tr->getNewEntryLabel("memset");
+}
+
+void SemPass1::callMemset(Temp addr, Temp val, Temp size) { // assign n bytes starting from addr as val
+    tr->genParam(addr);
+    tr->genParam(val);
+    tr->genParam(size);
+    tr->genCall(runtimeLabels[9]);
 }
 
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
@@ -221,9 +229,14 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
             Temp arr = tr->allocNewTempI4(sym->getType()->getSize()); // alloc space in stack
             arr->isConst = true;
             sym->attachTemp(arr);
+            Temp val = tr->genLoadImm4(0);
+            Temp size = tr->genLoadImm4(sym->getType()->getSize()); // no need to *4, already bytes size
+            callMemset(arr, val, size); // use memset to optimize codeGen
             for(int initVal : initVals) {
-                Temp x = tr->genLoadImm4(initVal);
-                tr->genStore(x, arr, offset); // store initVals to arr in stack
+                if(initVal != 0) {
+                    Temp x = tr->genLoadImm4(initVal);
+                    tr->genStore(x, arr, offset); // store initVals to arr in stack
+                }
                 offset += 4;
             }
         } // don't need? no! if the index is not a const!
@@ -296,11 +309,18 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not cons
                 //     offset += 4;
                 // }
             } else {                                               // 2.2 arraytype && local
+                int offset = 0;
                 Temp arr = tr->allocNewTempI4(sym->getType()->getSize());
                 sym->attachTemp(arr);
-                int offset = 0;
+                Temp val = tr->genLoadImm4(0);
+                Temp size = tr->genLoadImm4(sym->getType()->getSize());
+                callMemset(arr, val, size); // use memset to optimize codeGen
                 for(Temp initVal : initVals) {
-                    tr->genStore(initVal, arr, offset);
+                    if(initVal->isConst && initVal->ctval == 0) {
+                        ;
+                    } else {
+                        tr->genStore(initVal, arr, offset);
+                    }
                     offset += 4;
                 }
             }
@@ -774,6 +794,8 @@ antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
         n = tr->genCall(runtimeLabels[7]);
     } else if(name == "stoptime") {
         n = tr->genCall(runtimeLabels[8]);
+    } else if(name == "memset") {
+        n = tr->genCall(runtimeLabels[9]);
     } else {
         Function *sym = (Function *)(scopes->lookup(name, true));
         knpc_assert(sym);
