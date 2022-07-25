@@ -64,7 +64,7 @@ OffsetCounter *TransHelper::getOffsetCounter(void) {
     return mach->getOffsetCounter();
 }
 
-/* Allocates a new temporary int32 variable.
+/* Allocates a new temporary variable (int32 or float32).
  *
  * RETURNS:
  *   the newly created temporary variable
@@ -78,6 +78,8 @@ Temp TransHelper::getNewTempI4(void) {
     v->offset = 0;
     v->is_offset_fixed = false;
     v->ctval = 0;
+    v->ctvalf = 0;
+    v->isFloat = false;
     v->isConst = false;
     return v;
 }
@@ -541,10 +543,27 @@ Temp TransHelper::genLoadImm4(int value) {
     return c;
 }
 
+Temp TransHelper::genLoadImm4f(float value) {
+    Temp c = getNewTempI4();
+    c->isConst = true;
+    c->isFloat = true;
+    c->ctvalf = value;
+    chainUp(Tac::LoadImm4f(c, value));
+    return c;
+}
+
 Temp TransHelper::genLoadImm4NoChainUp(int value) { // used when get array initvals to pad zeroes
     Temp c = getNewTempI4();
     c->isConst = true;
     c->ctval = value;
+    return c;
+}
+
+Temp TransHelper::genLoadImm4fNoChainUp(float value) { // used when get array initvals to pad zeroes
+    Temp c = getNewTempI4();
+    c->isConst = true;
+    c->isFloat = true;
+    c->ctvalf = value;
     return c;
 }
 

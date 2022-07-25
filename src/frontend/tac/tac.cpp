@@ -494,6 +494,17 @@ Tac *Tac::LoadImm4(Temp dest, int value)
     return t;
 }
 
+Tac *Tac::LoadImm4f(Temp dest, float value)
+{
+    REQUIRE_I4(dest);
+
+    Tac *t = allocateNewTac(Tac::LOAD_IMM4F);
+    t->op0.var = dest;
+    t->op1.fval = value;
+
+    return t;
+}
+
 Tac *Tac::LoadSymbol(Temp dest, std::string label)
 {
     REQUIRE_I4(dest);

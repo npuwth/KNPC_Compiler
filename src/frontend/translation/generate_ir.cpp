@@ -18,7 +18,7 @@ std::string p_name = "initial";
 size_t p_unaryOp = 0;
 int order = 0; // used in funcDef
 util::Stack<Temp> tempStack;
-Label runtimeLabels[10];
+Label runtimeLabels[14];
 
 tac::Label current_break_label;
 tac::Label current_continue_label;
@@ -60,10 +60,35 @@ util::Vector<int> SemPass1::get_array_constInitVals(SysYParser::ConstInitValCont
         ctx->constExp()->accept(this);
         Temp n = tempStack.top();tempStack.pop();
         knpc_assert(n->isConst);
-        ret.push_back(n->ctval);
+        ret.push_back(n->ctval); // TODO: implicit convert needed? from float to int?
     } else {
         for(auto it : ctx->constInitVal()) {
             util::Vector<int> temp = get_array_constInitVals(it, dims, dimSize, d + 1); // dfs
+            for(size_t i = 0; i < temp.size(); i++) {
+                ret.push_back(temp[i]);
+            }
+        }
+        int j = ret.size();
+        while(j < dims[d] * dimSize[d]) { // pad zero in a { }
+            ret.push_back(0);
+            j++;
+        }
+    }
+    return ret;
+}
+
+util::Vector<float> SemPass1::get_array_constInitValsf(SysYParser::ConstInitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d) {
+    util::Vector<float> ret;
+    if(ctx->constExp()) {
+        ctx->constExp()->accept(this);
+        Temp n = tempStack.top();tempStack.pop();
+        knpc_assert(n->isConst);
+        // knpc_assert(n->isFloat); // must be a float? no! TODO:implicit convert! from int to float!
+        if(n->isFloat) ret.push_back(n->ctvalf);
+        else ret.push_back(n->ctval);
+    } else {
+        for(auto it : ctx->constInitVal()) {
+            util::Vector<float> temp = get_array_constInitValsf(it, dims, dimSize, d + 1); // dfs
             for(size_t i = 0; i < temp.size(); i++) {
                 ret.push_back(temp[i]);
             }
@@ -111,6 +136,10 @@ void SemPass1::initRunTimeLabels() { // 9 runtime library functions
     runtimeLabels[7] = tr->getNewEntryLabel("_sysy_starttime");
     runtimeLabels[8] = tr->getNewEntryLabel("_sysy_stoptime");
     runtimeLabels[9] = tr->getNewEntryLabel("memset");
+    runtimeLabels[10] = tr->getNewEntryLabel("getfloat");
+    runtimeLabels[11] = tr->getNewEntryLabel("getfarray");
+    runtimeLabels[12] = tr->getNewEntryLabel("putfloat");
+    runtimeLabels[13] = tr->getNewEntryLabel("putfarray");
 }
 
 void SemPass1::callMemset(Temp addr, Temp val, Temp size) { // assign n bytes starting from addr as val
@@ -577,6 +606,7 @@ antlrcpp::Any SemPass1::visitContinueStmt (SysYParser::ContinueStmtContext *ctx)
 
 antlrcpp::Any SemPass1::visitAssignment (SysYParser::AssignmentContext *ctx) {
     // differ according to the lval(array? global?)
+    // need to do implicit conversion here between int and float!
     ctx->exp()->accept(this);
     Temp r = tempStack.top();tempStack.pop(); // right_val
     size_t r_dim = ctx->lVal()->accept(this);
@@ -796,6 +826,14 @@ antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
         n = tr->genCall(runtimeLabels[8]);
     } else if(name == "memset") {
         n = tr->genCall(runtimeLabels[9]);
+    } else if(name == "getfloat") {
+        n = tr->genCall(runtimeLabels[10]);
+    } else if(name == "getfarray") {
+        n = tr->genCall(runtimeLabels[11]);
+    } else if(name == "putfloat") {
+        n = tr->genCall(runtimeLabels[12]);
+    } else if(name == "putfarray") {
+        n = tr->genCall(runtimeLabels[13]);
     } else {
         Function *sym = (Function *)(scopes->lookup(name, true));
         knpc_assert(sym);

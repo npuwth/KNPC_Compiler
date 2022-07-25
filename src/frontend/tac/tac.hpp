@@ -14,6 +14,8 @@ namespace tac{
         bool is_offset_fixed; // 临时变量是否被分配空间
         int offset;           // FP寄存器的偏移量
         int ctval;            // 编译时刻的静态值
+        float ctvalf;         // 编译时刻的静态值
+        bool isFloat;         // 是否浮点
         bool isConst;         // 是否常量
         int param_ord;        // 是第几个参数（从1开始，若不是参数为0）
     } * Temp;
@@ -77,6 +79,7 @@ namespace tac{
             POP,
             RETURN,
             LOAD_IMM4,
+            LOAD_IMM4F,
             LOAD_SYMBOL,
             LOAD,
             STORE,
@@ -93,6 +96,7 @@ namespace tac{
             Temp var;
             Label label;
             int ival;         // 整数常量
+            float fval;       // 浮点常量
             int offset;       // 偏移量
             int size;         // 栈帧大小，数组分配时用
             std::string name; // 符号名
@@ -129,6 +133,7 @@ namespace tac{
         static Tac *LNot(Temp dest, Temp src);
         static Tac *BNot(Temp dest, Temp src);
         static Tac *LoadImm4(Temp dest, int value);
+        static Tac *LoadImm4f(Temp dest, float value);
         static Tac *LoadSymbol(Temp dest, std::string label);
         static Tac *Load(Temp dest, Temp src, int offset);
         static Tac *Store(Temp src, Temp base, int offset);
