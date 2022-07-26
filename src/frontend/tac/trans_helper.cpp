@@ -78,7 +78,7 @@ Temp TransHelper::getNewTempI4(void) {
     v->offset = 0;
     v->is_offset_fixed = false;
     v->ctval = 0;
-    v->ctvalf = 0;
+    v->ctvalf = 0.0;
     v->isFloat = false;
     v->isConst = false;
     return v;
@@ -231,6 +231,16 @@ void TransHelper::genGlobalVarible(std::string name, int value, int size, bool i
     ptail->as.globalVar->isConst = isConst;
 }
 
+void TransHelper::genGlobalVaribleF(std::string name, float value, int size, bool isConst) {
+    ptail = ptail->next = new Piece();
+    ptail->kind = Piece::GLOBALF;
+    ptail->as.globalVarF = new GlobalObjectF();
+    ptail->as.globalVarF->name = name;
+    ptail->as.globalVarF->value = value;
+    ptail->as.globalVarF->size = size;
+    ptail->as.globalVarF->isConst = isConst;
+}
+
 void TransHelper::genGlobalArray(std::string name, util::Vector<int> values, int size, bool isConst) {
     ptail = ptail->next = new Piece();
     ptail->kind = Piece::GLOARR;
@@ -239,6 +249,16 @@ void TransHelper::genGlobalArray(std::string name, util::Vector<int> values, int
     ptail->as.globalArr->values = values;
     ptail->as.globalArr->size = size;
     ptail->as.globalArr->isConst = isConst;
+}
+
+void TransHelper::genGlobalArrayF(std::string name, util::Vector<float> values, int size, bool isConst) {
+    ptail = ptail->next = new Piece();
+    ptail->kind = Piece::GLOARRF;
+    ptail->as.globalArrF = new GlobalArrayF();
+    ptail->as.globalArrF->name = name;
+    ptail->as.globalArrF->values = values;
+    ptail->as.globalArrF->size = size;
+    ptail->as.globalArrF->isConst = isConst;
 }
 
 /* Appends an Add tac node to the current list.
@@ -481,7 +501,7 @@ Temp TransHelper::genPop(void) {
 void TransHelper::genPush(Temp src) { chainUp(Tac::Push(src)); }
 
 Temp TransHelper::genCall(Label label) {
-    Temp c = getNewTempI4();
+    Temp c = getNewTempI4(); // TODO:float
     chainUp(Tac::Call(c, label));
     return c;
 }
@@ -543,12 +563,12 @@ Temp TransHelper::genLoadImm4(int value) {
     return c;
 }
 
-Temp TransHelper::genLoadImm4f(float value) {
+Temp TransHelper::genLoadImm4F(float value) {
     Temp c = getNewTempI4();
     c->isConst = true;
     c->isFloat = true;
     c->ctvalf = value;
-    chainUp(Tac::LoadImm4f(c, value));
+    chainUp(Tac::LoadImm4F(c, value));
     return c;
 }
 
@@ -559,7 +579,7 @@ Temp TransHelper::genLoadImm4NoChainUp(int value) { // used when get array initv
     return c;
 }
 
-Temp TransHelper::genLoadImm4fNoChainUp(float value) { // used when get array initvals to pad zeroes
+Temp TransHelper::genLoadImm4FNoChainUp(float value) { // used when get array initvals to pad zeroes
     Temp c = getNewTempI4();
     c->isConst = true;
     c->isFloat = true;

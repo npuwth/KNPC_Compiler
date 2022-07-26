@@ -18,7 +18,7 @@ std::string p_name = "initial";
 size_t p_unaryOp = 0;
 int order = 0; // used in funcDef
 util::Stack<Temp> tempStack;
-Label runtimeLabels[14];
+Label runtimeLabels[16];
 
 tac::Label current_break_label;
 tac::Label current_continue_label;
@@ -95,7 +95,7 @@ util::Vector<float> SemPass1::get_array_constInitValsf(SysYParser::ConstInitValC
         }
         int j = ret.size();
         while(j < dims[d] * dimSize[d]) { // pad zero in a { }
-            ret.push_back(0);
+            ret.push_back(0.0);
             j++;
         }
     }
@@ -125,6 +125,29 @@ util::Vector<Temp> SemPass1::get_array_initVals(SysYParser::InitValContext *ctx,
     return ret;
 }
 
+util::Vector<Temp> SemPass1::get_array_initValsf(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d) {
+    util::Vector<Temp> ret;
+    if(ctx->exp()) {
+        ctx->exp()->accept(this);
+        Temp n = tempStack.top();tempStack.pop();
+        ret.push_back(n);
+    } else {
+        for(auto it : ctx->initVal()) {
+            util::Vector<Temp> temp = get_array_initValsf(it, dims, dimSize, d + 1); // dfs
+            for(size_t i = 0; i < temp.size(); i++) {
+                ret.push_back(temp[i]);
+            }
+        }
+        int j = ret.size();
+        while(j < dims[d] * dimSize[d]) { // pad zero in a { }
+            Temp imm = tr->genLoadImm4FNoChainUp(0.0);
+            ret.push_back(imm);
+            j++;
+        }
+    }
+    return ret;
+}
+
 void SemPass1::initRunTimeLabels() { // 9 runtime library functions
     runtimeLabels[0] = tr->getNewEntryLabel("getint");
     runtimeLabels[1] = tr->getNewEntryLabel("getch");
@@ -140,6 +163,8 @@ void SemPass1::initRunTimeLabels() { // 9 runtime library functions
     runtimeLabels[11] = tr->getNewEntryLabel("getfarray");
     runtimeLabels[12] = tr->getNewEntryLabel("putfloat");
     runtimeLabels[13] = tr->getNewEntryLabel("putfarray");
+    runtimeLabels[14] = tr->getNewEntryLabel("__aeabi_f2iz");
+    runtimeLabels[15] = tr->getNewEntryLabel("__aeabi_i2f");
 }
 
 void SemPass1::callMemset(Temp addr, Temp val, Temp size) { // assign n bytes starting from addr as val
@@ -147,6 +172,26 @@ void SemPass1::callMemset(Temp addr, Temp val, Temp size) { // assign n bytes st
     tr->genParam(val);
     tr->genParam(size);
     tr->genCall(runtimeLabels[9]);
+}
+
+Temp SemPass1::callFloat2Int(Temp src) { // call this function to convert from float to int
+    knpc_assert(src->isFloat);
+    if(src->isConst) {
+        return tr->genLoadImm4(src->ctvalf);
+    } else {
+        tr->genParam(src);
+        return tr->genCall(runtimeLabels[14]);
+    }
+}
+
+Temp SemPass1::callInt2Float(Temp src) { // call this function to convert from int to float
+    knpc_assert(!src->isFloat);
+    if(src->isConst) {
+        return tr->genLoadImm4F(src->ctval);
+    } else {
+        tr->genParam(src);
+        return tr->genCall(runtimeLabels[15]);
+    }
 }
 
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {

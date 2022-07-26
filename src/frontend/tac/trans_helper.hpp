@@ -42,7 +42,9 @@ class TransHelper {
     void endFunc(void);
 
     void genGlobalVarible(std::string, int, int, bool);
+    void genGlobalVaribleF(std::string, float, int, bool);
     void genGlobalArray(std::string, util::Vector<int>, int, bool);
+    void genGlobalArrayF(std::string, util::Vector<float>, int, bool);
 
     // Arithmetic
     Temp genAdd(Temp, Temp);
@@ -75,9 +77,9 @@ class TransHelper {
     // Miscellaneous 其他       important
     void genAssign(Temp, Temp);
     Temp genLoadImm4(int);
-    Temp genLoadImm4f(float);
+    Temp genLoadImm4F(float);
     Temp genLoadImm4NoChainUp(int);
-    Temp genLoadImm4fNoChainUp(float);
+    Temp genLoadImm4FNoChainUp(float);
     Temp genLoadSymbol(std::string);
     Temp genLoad(Temp, int);
     void genStore(Temp, Temp, int);

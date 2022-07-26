@@ -43,6 +43,7 @@ class SemPass1 : public SysYBaseVisitor { // total 50
     util::Vector<int> get_array_constInitVals(SysYParser::ConstInitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);    
     util::Vector<float> get_array_constInitValsf(SysYParser::ConstInitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);    
     util::Vector<Temp> get_array_initVals(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);
+    util::Vector<Temp> get_array_initValsf(SysYParser::InitValContext *ctx, util::Vector<int> dims, util::Vector<int> dimSize, int d);
     virtual antlrcpp::Any visitConstInitVal(SysYParser::ConstInitValContext *ctx) override;
     virtual antlrcpp::Any visitInitVal(SysYParser::InitValContext *ctx) override;
     // visit expressions, 20
@@ -89,6 +90,8 @@ class SemPass1 : public SysYBaseVisitor { // total 50
     // init 9 runtime library function
     void initRunTimeLabels();
     void callMemset(Temp addr, Temp val, Temp size);
+    Temp callFloat2Int(Temp src);
+    Temp callInt2Float(Temp src);
     // Temp constPropagation(Temp x);
 };
 

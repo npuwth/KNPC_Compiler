@@ -30,6 +30,7 @@ static Tac *allocateNewTac(Tac::Kind code)
     Tac *t = new Tac;
     t->op_code = code;
     t->op0.ival = t->op1.ival = t->op2.ival = 0;
+    t->op0.fval = t->op1.fval = t->op2.fval = 0;
     t->bb_num = 0;
     t->mark = 0;
     t->prev = t->next = NULL;
@@ -494,7 +495,7 @@ Tac *Tac::LoadImm4(Temp dest, int value)
     return t;
 }
 
-Tac *Tac::LoadImm4f(Temp dest, float value)
+Tac *Tac::LoadImm4F(Temp dest, float value)
 {
     REQUIRE_I4(dest);
 

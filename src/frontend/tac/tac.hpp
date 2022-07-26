@@ -42,6 +42,14 @@ namespace tac{
         bool isConst;       //是否常量
     } * GlobalVar;
 
+    typedef struct GlobalObjectF
+    {
+        std::string name;   //全局变量名
+        float value;        //全局变量值
+        int size;           //所占大小
+        bool isConst;       //是否常量
+    } * GlobalVarF;
+
     typedef struct GlobalArray
     {
         std::string name;   //全局变量名
@@ -49,6 +57,14 @@ namespace tac{
         int size;           //所占大小
         bool isConst;       //是否常量
     } * GlobalArr;
+
+    typedef struct GlobalArrayF
+    {
+        std::string name;   //全局变量名
+        util::Vector<float> values;//全局变量值
+        int size;           //所占大小
+        bool isConst;       //是否常量
+    } * GlobalArrF;
 
     struct Tac
     {
@@ -133,7 +149,7 @@ namespace tac{
         static Tac *LNot(Temp dest, Temp src);
         static Tac *BNot(Temp dest, Temp src);
         static Tac *LoadImm4(Temp dest, int value);
-        static Tac *LoadImm4f(Temp dest, float value);
+        static Tac *LoadImm4F(Temp dest, float value);
         static Tac *LoadSymbol(Temp dest, std::string label);
         static Tac *Load(Temp dest, Temp src, int offset);
         static Tac *Store(Temp src, Temp base, int offset);
@@ -158,7 +174,9 @@ namespace tac{
         {
             FUNCTY,
             GLOBAL,
-            GLOARR
+            GLOBALF,
+            GLOARR,
+            GLOARRF
         } kind;
 
         // data of this Piece node
@@ -167,6 +185,8 @@ namespace tac{
             Functy functy;
             GlobalVar globalVar;
             GlobalArr globalArr;
+            GlobalVarF globalVarF;
+            GlobalArrF globalArrF;
         } as;
 
         // 下一个块指针
