@@ -65,6 +65,12 @@ _deps
 *.tokens
 *.interp
 
+## Testcases
+function_test2021
+performance_test2021
+functional
+performance
+
 a.out
 pk
 run.sh
@@ -72,8 +78,6 @@ testcases
 failcases
 out
 minidecaf-tests
-functional
-performance
 
 test.sh
 debug
