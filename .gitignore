@@ -1,5 +1,3 @@
-## RUST IGNORE
-Cargo.lock
 target
 test/out
 *.bak
@@ -13,6 +11,7 @@ a.out
 **/.DS_Store
 .vscode/**
 src/.vscode/**
+third_party
 
 ## CPP IGNORE
 # Prerequisites
