@@ -137,7 +137,7 @@ void ArmDesc::emitPieces(scope::GlobalScope *gscope, Piece *ps,
             }
             break;
 
-        default:
+        default: // TODO: Float Support!
             knpc_assert(false); // unreachable
             break;
         }

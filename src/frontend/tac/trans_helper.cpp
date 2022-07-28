@@ -501,7 +501,7 @@ Temp TransHelper::genPop(void) {
 void TransHelper::genPush(Temp src) { chainUp(Tac::Push(src)); }
 
 Temp TransHelper::genCall(Label label) {
-    Temp c = getNewTempI4(); // TODO:float
+    Temp c = getNewTempI4(); // TODO: float
     chainUp(Tac::Call(c, label));
     return c;
 }

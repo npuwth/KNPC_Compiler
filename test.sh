@@ -9,7 +9,7 @@ do
 	then
 		continue
 	fi
-	$COMPILER ${source_file%.*}.c > ${source_file%.*}.s
+	$COMPILER ${source_file%.*}.c -S -o ${source_file%.*}.s
 	if [ $? == 0 ];
 	then
 		arm-none-linux-gnueabihf-gcc ${source_file%.*}.s $TEST_PATH/sylib.c -o ${source_file%.*}.tmp -mcpu=cortex-a72 --static

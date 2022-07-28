@@ -190,7 +190,7 @@ Temp SemPass1::callInt2Float(Temp src) { // call this function to convert from i
         return tr->genLoadImm4F(src->ctval);
     } else {
         tr->genParam(src);
-        return tr->genCall(runtimeLabels[15]);
+        return tr->genCall(runtimeLabels[15]); // TODO: Need to modify in genCall for float support!
     }
 }
 
