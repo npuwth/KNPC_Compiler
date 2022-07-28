@@ -11,17 +11,18 @@ using namespace antlr4;
 using namespace knpc;
 
 int main(int argc, char **argv) {
-    std::ifstream sourceFile;
     if(argc == 5) { // functional test
-        sourceFile.open(argv[4]);
+        ;
     } else if(argc == 6) { // performance test
-        sourceFile.open(argv[5]);
+        ;
     } else {
         std::cerr<<"[ERROR] Input Format Error!\nThe Correct Example is as Follows:\n";
-        std::cerr<<"[Functional Test] compiler -S -o testcase.s testcase.sysy\n";
-        std::cerr<<"[Performance Test] compiler -S -o testcase.s -O1 testcase.sysy\n"; 
+        std::cerr<<"[Functional Test] compiler -S -o testcase.s testcase.sy\n";
+        std::cerr<<"[Performance Test] compiler -S -o testcase.s testcase.sy -O2\n"; 
         knpc_assert(false);
     }
+    std::ifstream sourceFile;
+    sourceFile.open(argv[4]);
     if(!sourceFile.is_open()) {
         std::cerr<<"[ERROR] Cannot Open Input File!\n";
         knpc_assert(false);
