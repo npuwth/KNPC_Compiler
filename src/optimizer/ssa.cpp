@@ -1,4 +1,4 @@
-#include "optimizer/pass.hpp"
+#include "pass.hpp"
 ssa *ssaIR = new ssa();
 /********************************************SSA***********************************/
 /**为了后续优化需要先将IR转换成静态单赋值类型的IR

@@ -4,8 +4,8 @@
  *  Keltin Leung 
  */
 
-#include "symb/symbol.hpp"
-#include "util/config.hpp"
+#include "symbol.hpp"
+#include "../../util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::symb;

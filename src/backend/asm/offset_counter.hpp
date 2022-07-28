@@ -7,7 +7,7 @@
 #ifndef __KNPC_OFFSETCOUNTER__
 #define __KNPC_OFFSETCOUNTER__
 
-#include "util/define.hpp"
+#include "../../util/define.hpp"
 
 namespace knpc {
 

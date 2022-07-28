@@ -11,9 +11,9 @@
 #ifndef __KNPC_SCOPESTACK__
 #define __KNPC_SCOPESTACK__
 
-#include "3rdparty/stack.hpp"
-#include "util/define.hpp"
-#include "scope/scope.hpp"
+#include "scope.hpp"
+#include "../../3rdparty/stack.hpp"
+#include "../../util/define.hpp"
 
 namespace knpc {
 

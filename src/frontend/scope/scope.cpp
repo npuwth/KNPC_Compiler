@@ -7,10 +7,10 @@
  *  Keltin Leung 
  */
 
-#include "scope/scope.hpp"
-#include "util/config.hpp"
-#include "util/location.hpp"
-#include "symb/symbol.hpp"
+#include "scope.hpp"
+#include "../symb/symbol.hpp"
+#include "../../util/config.hpp"
+#include "../../util/location.hpp"
 
 using namespace knpc;
 using namespace knpc::symb;

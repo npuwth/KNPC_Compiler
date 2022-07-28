@@ -4,8 +4,8 @@
  *  Keltin Leung 
  */
 
-#include "scope/scope_stack.hpp"
-#include "util/config.hpp"
+#include "scope_stack.hpp"
+#include "../../util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::scope;

@@ -4,10 +4,10 @@
  *  Keltin Leung
  */
 
-#include "tac/tac.hpp"
-#include "util/config.hpp"
-#include "util/options.hpp"
-#include "tac/flow_graph.hpp"
+#include "tac.hpp"
+#include "flow_graph.hpp"
+#include "../../util/config.hpp"
+#include "../../util/options.hpp"
 
 #include <iomanip>
 #include <sstream>

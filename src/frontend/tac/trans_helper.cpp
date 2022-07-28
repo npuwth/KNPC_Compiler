@@ -3,14 +3,14 @@
  *
  */
 
-#include "tac/trans_helper.hpp"
-#include "asm/mach_desc.hpp"
-#include "asm/offset_counter.hpp"
-#include "util/config.hpp"
-#include "scope/scope.hpp"
-#include "scope/scope_stack.hpp"
-#include "symb/symbol.hpp"
-#include "tac/tac.hpp"
+#include "trans_helper.hpp"
+#include "tac.hpp"
+#include "../../backend/asm/mach_desc.hpp"
+#include "../../backend/asm/offset_counter.hpp"
+#include "../../util/config.hpp"
+#include "../scope/scope.hpp"
+#include "../scope/scope_stack.hpp"
+#include "../symb/symbol.hpp"
 
 #include <cstdio>
 #include <cstring>

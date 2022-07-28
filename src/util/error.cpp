@@ -1,9 +1,9 @@
 #include "config.hpp"
 #include "errorbuf.hpp"
 #include "location.hpp"
-#include "scope/scope.hpp"
-#include "symb/symbol.hpp"
-#include "type/type.hpp"
+#include "../frontend/scope/scope.hpp"
+#include "../frontend/symb/symbol.hpp"
+#include "../frontend/type/type.hpp"
 
 #include <cstdarg>
 #include <cstdio>

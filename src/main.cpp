@@ -3,9 +3,9 @@
 
 #include "frontend/parser/SysYLexer.h"
 #include "frontend/parser/SysYParser.h"
+#include "frontend/translation/generate_ir.hpp"
 #include "util/define.hpp"
 #include "util/config.hpp"
-#include "translation/generate_ir.hpp"
 
 using namespace antlr4;
 using namespace knpc;

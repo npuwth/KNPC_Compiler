@@ -11,9 +11,9 @@
 #ifndef __KNPC_TYPE__
 #define __KNPC_TYPE__
 
-#include "3rdparty/list.hpp"
-#include "3rdparty/vector.hpp"
-#include "util/define.hpp"
+#include "../../3rdparty/list.hpp"
+#include "../../3rdparty/vector.hpp"
+#include "../../util/define.hpp"
 
 #include <iostream>
 

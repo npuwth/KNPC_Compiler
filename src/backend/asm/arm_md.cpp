@@ -3,16 +3,16 @@
  *
  */
 
-#include "asm/arm_md.hpp"
-#include "3rdparty/set.hpp"
-#include "asm/offset_counter.hpp"
-#include "asm/arm_frame_manager.hpp"
-#include "util/config.hpp"
-#include "util/options.hpp"
-#include "scope/scope.hpp"
-#include "symb/symbol.hpp"
-#include "tac/flow_graph.hpp"
-#include "tac/tac.hpp"
+#include "arm_md.hpp"
+#include "offset_counter.hpp"
+#include "arm_frame_manager.hpp"
+#include "../../3rdparty/set.hpp"
+#include "../../util/config.hpp"
+#include "../../util/options.hpp"
+#include "../../frontend/scope/scope.hpp"
+#include "../../frontend/symb/symbol.hpp"
+#include "../../frontend/tac/flow_graph.hpp"
+#include "../../frontend/tac/tac.hpp"
 
 #include <cstring>
 #include <iomanip>

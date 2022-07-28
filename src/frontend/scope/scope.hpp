@@ -12,7 +12,7 @@
 #ifndef __KNPC_SCOPE__
 #define __KNPC_SCOPE__
 
-#include "util/define.hpp"
+#include "../../util/define.hpp"
 #include <unordered_map>
 
 #include <iostream>

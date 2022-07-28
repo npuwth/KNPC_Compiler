@@ -4,9 +4,9 @@
  *
  */
 
-#include "asm/arm_frame_manager.hpp"
-#include "util/config.hpp"
-#include "tac/tac.hpp"
+#include "arm_frame_manager.hpp"
+#include "../../util/config.hpp"
+#include "../../frontend/tac/tac.hpp"
 
 #include <algorithm>
 #include <cstring>

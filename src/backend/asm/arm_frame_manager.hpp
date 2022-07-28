@@ -7,8 +7,8 @@
 #ifndef __KNPC_ARMFM__
 #define __KNPC_ARMFM__
 
-#include "3rdparty/set.hpp"
-#include "util/define.hpp"
+#include "../../3rdparty/set.hpp"
+#include "../../util/define.hpp"
 namespace knpc {
 namespace assembly {
 

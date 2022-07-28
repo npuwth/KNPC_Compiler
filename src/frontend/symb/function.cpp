@@ -4,12 +4,12 @@
  *  Keltin Leung 
  */
 
-#include "util/config.hpp"
-#include "scope/scope.hpp"
-#include "scope/scope_stack.hpp"
-#include "symb/symbol.hpp"
-#include "tac/tac.hpp"
-#include "type/type.hpp"
+#include "symbol.hpp"
+#include "../scope/scope.hpp"
+#include "../scope/scope_stack.hpp"
+#include "../tac/tac.hpp"
+#include "../type/type.hpp"
+#include "../../util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::symb;

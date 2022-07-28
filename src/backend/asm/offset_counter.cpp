@@ -5,8 +5,8 @@
  *  Keltin Leung 
  */
 
-#include "asm/offset_counter.hpp"
-#include "util/config.hpp"
+#include "offset_counter.hpp"
+#include "../../util/config.hpp"
 
 using namespace knpc::assembly;
 

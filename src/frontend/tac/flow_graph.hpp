@@ -10,10 +10,10 @@
 #ifndef __KNPC_FLOWGRAPH__
 #define __KNPC_FLOWGRAPH__
 
-#include "3rdparty/set.hpp"
-#include "3rdparty/vector.hpp"
-#include "asm/mach_desc.hpp"
-#include "util/define.hpp"
+#include "../../3rdparty/set.hpp"
+#include "../../3rdparty/vector.hpp"
+#include "../../backend/asm/mach_desc.hpp"
+#include "../../util/define.hpp"
 
 #include <iostream>
 

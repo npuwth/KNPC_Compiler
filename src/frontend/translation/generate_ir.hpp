@@ -1,13 +1,13 @@
-#include "frontend/parser/SysYBaseVisitor.h"
-#include "util/config.hpp"
-#include "scope/scope.hpp"
-#include "scope/scope_stack.hpp"
-#include "symb/symbol.hpp"
-#include "type/type.hpp"
-#include "backend/asm/offset_counter.hpp"
-#include "backend/asm/arm_md.hpp"
-#include "tac/tac.hpp"
-#include "tac/trans_helper.hpp"
+#include "../parser/SysYBaseVisitor.h"
+#include "../scope/scope.hpp"
+#include "../scope/scope_stack.hpp"
+#include "../symb/symbol.hpp"
+#include "../type/type.hpp"
+#include "../tac/tac.hpp"
+#include "../tac/trans_helper.hpp"
+#include "../../util/config.hpp"
+#include "../../backend/asm/offset_counter.hpp"
+#include "../../backend/asm/arm_md.hpp"
 
 using namespace knpc;
 using namespace knpc::scope;

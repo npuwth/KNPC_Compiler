@@ -9,8 +9,8 @@
 #ifndef __KNPC_TRANSHELPER__
 #define __KNPC_TRANSHELPER__
 
-#include "util/define.hpp"
-#include "tac/tac.hpp"
+#include "tac.hpp"
+#include "../../util/define.hpp"
 
 namespace knpc {
 

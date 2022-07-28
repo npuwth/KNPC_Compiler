@@ -11,9 +11,9 @@
  *
  */
 
-#include "util/config.hpp"
-#include "tac/flow_graph.hpp"
-#include "tac/tac.hpp"
+#include "flow_graph.hpp"
+#include "tac.hpp"
+#include "../../util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::tac;

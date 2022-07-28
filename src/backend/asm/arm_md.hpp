@@ -6,10 +6,10 @@
 #ifndef __KNPC_ARMMD__
 #define __KNPC_ARMMD__
 
-#include "3rdparty/set.hpp"
-#include "asm/mach_desc.hpp"
-#include "asm/arm_frame_manager.hpp"
-#include "util/define.hpp"
+#include "mach_desc.hpp"
+#include "arm_frame_manager.hpp"
+#include "../../3rdparty/set.hpp"
+#include "../../util/define.hpp"
 
 namespace knpc {
 #define ARM_COMPONENTS_DEFINED

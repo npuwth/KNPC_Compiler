@@ -4,9 +4,9 @@
  *  Keltin Leung 
  */
 
-#include "util/config.hpp"
-#include "scope/scope.hpp"
-#include "symb/symbol.hpp"
+#include "symbol.hpp"
+#include "../scope/scope.hpp"
+#include "../../util/config.hpp"
 
 using namespace knpc;
 using namespace knpc::symb;

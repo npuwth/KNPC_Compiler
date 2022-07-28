@@ -1,8 +1,8 @@
-#include "frontend/tac/tac.hpp"
-#include "util/config.hpp"
-#include "util/options.hpp"
-#include "frontend/tac/flow_graph.hpp"
-#include "frontend/symb/symbol.hpp"
+#include "../util/config.hpp"
+#include "../util/options.hpp"
+#include "../frontend/tac/tac.hpp"
+#include "../frontend/tac/flow_graph.hpp"
+#include "../frontend/symb/symbol.hpp"
 #include <vector>
 #include <map>
 #include <set>

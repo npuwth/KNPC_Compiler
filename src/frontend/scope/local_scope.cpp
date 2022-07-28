@@ -2,10 +2,10 @@
  *  Implementation of "LocalScope".
  */
 
-#include "3rdparty/vector.hpp"
-#include "util/config.hpp"
-#include "scope/scope.hpp"
-#include "symb/symbol.hpp"
+#include "scope.hpp"
+#include "../symb/symbol.hpp"
+#include "../../3rdparty/vector.hpp"
+#include "../../util/config.hpp"
 
 #include <algorithm>
 

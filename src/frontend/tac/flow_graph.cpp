@@ -3,10 +3,10 @@
  *
  */
 
-#include "tac/flow_graph.hpp"
-#include "3rdparty/map.hpp"
-#include "util/config.hpp"
-#include "tac/tac.hpp"
+#include "flow_graph.hpp"
+#include "tac.hpp"
+#include "../../3rdparty/map.hpp"
+#include "../../util/config.hpp"
 #include <unordered_map>
 
 using namespace knpc;
