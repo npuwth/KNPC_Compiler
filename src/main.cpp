@@ -11,32 +11,31 @@ using namespace antlr4;
 using namespace knpc;
 
 int main(int argc, char **argv) {
+    std::ifstream sourceFile;
     if(argc == 5) { // functional test
-        ;
+        sourceFile.open(argv[4]);
     } else if(argc == 6) { // performance test
-        ;
+        sourceFile.open(argv[5]);
     } else {
         std::cerr<<"[ERROR] Input Format Error!\nThe Correct Example is as Follows:\n";
-        std::cerr<<"[Functional Test] compiler testcase.sysy -S -o testcase.s\n";
-        std::cerr<<"[Performance Test] compiler testcase.sysy -S -o testcase.s -O1\n"; 
+        std::cerr<<"[Functional Test] compiler -S -o testcase.s testcase.sysy\n";
+        std::cerr<<"[Performance Test] compiler -S -o testcase.s -O1 testcase.sysy\n"; 
         knpc_assert(false);
     }
-    std::ifstream sourceFile;
-    sourceFile.open(argv[1]);
     if(!sourceFile.is_open()) {
         std::cerr<<"[ERROR] Cannot Open Input File!\n";
         knpc_assert(false);
     }
     std::ofstream destFile;
-    destFile.open(argv[4]);
+    destFile.open(argv[3]);
     if(!destFile.is_open()) {
         std::cerr<<"[ERROR] Cannot Open Output File!\n";
         knpc_assert(false);
     }
     int module = 0;
-    if(argv[2][1] == 'S') { // generate asm code
+    if(argv[1][1] == 'S') { // generate asm code
         module = 0;
-    } else if(argv[2][1] == 'T') { // generate TAC (IR)
+    } else if(argv[1][1] == 'T') { // generate TAC (IR)
         module = 1;
     } else {
         std::cerr<<"[ERROR] Module Not Supported!\nUse -S or -T Instead\n";
