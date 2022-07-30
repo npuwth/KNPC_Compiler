@@ -22,7 +22,10 @@ Return: 'return';
 Decimal: [1-9][0-9]*;
 Octal: [0][0-7]*;
 Hexadecimal: [0][xX][0-9a-fA-F]+;
-FloatLiteral: [0-9]* '.' [0-9]* ([e|E][+|-]? [0-9]+)? [f|F]?;
+DFloat1: [0-9]* '.' [0-9]* ([e|E][+|-]? [0-9]+)?;
+DFloat2: [0-9]+ [e|E][+|-]? [0-9]+;
+HFloat1: [0][xX][0-9a-fA-F]* '.' [0-9a-fA-F]* [p|P][+|-]? [0-9]+;
+HFloat2: [0][xX][0-9a-fA-F]+ [p|P][+|-]? [0-9]+;
 
 Identifier: [a-zA-Z_][a-zA-Z0-9_]*;
 
@@ -94,7 +97,7 @@ primaryExp:
 	| number                                  # primary3
 	;
 
-number: Decimal | Octal | Hexadecimal | FloatLiteral;
+number: Decimal | Octal | Hexadecimal | DFloat1 | DFloat2 | HFloat1 | HFloat2;
 
 unaryExp:
 	primaryExp                                # unary1

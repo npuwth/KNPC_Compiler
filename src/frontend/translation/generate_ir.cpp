@@ -7,6 +7,7 @@
  */
 
 #include "generate_ir.hpp"
+#include "math.h"
 // #define debug_on
 
 #define RESET_OFFSET() tr->getOffsetCounter()->reset(OffsetCounter::PARAMETER)
@@ -192,6 +193,57 @@ Temp SemPass1::callInt2Float(Temp src) { // call this function to convert from i
         tr->genParam(src);
         return tr->genCall(runtimeLabels[15]); // TODO: Need to modify in genCall for float support!
     }
+}
+
+int computeDecimal(std::string str, int start, int end) {
+    int ans = 0;
+    for(int i = start; i < end; ++i) ans = ans*10 + (str[i]^48);
+    return ans;
+}
+
+int computeOctal(std::string str, int start, int end) {
+    int ans = 0;
+    for(int i = start; i < end; ++i) ans = ans*8 + (str[i]^48);
+    return ans;
+}
+
+int computeHexadecimal(std::string str, int start, int end) {
+    int ans = 0;
+    for(int i = start; i < end; ++i) {
+        if(str[i] < 'A') ans = ans*16 + (str[i]^48);
+        else if(str[i] < 'Z')ans = ans*16 + 10 + (str[i]-'A');
+        else ans = ans*16 + 10 + (str[i]-'a');
+    }
+    return ans;
+}
+
+float computeHexadecimalF(std::string str, int start, int end) {
+    int a = computeHexadecimal(str, start, end);
+    int b = 2;
+    float ans = 0.0;
+    while(a != 0) {
+        if(a % 2 == 0) {
+            ;
+        } else {
+            ans += (1.0 / b);
+        }
+        a = a / 2;
+        b = b * 2;
+    }
+    return ans;
+}
+
+int computeExponentPart(std::string str, int start, int end) {
+    int c = 0;
+    if(str[start] == '+') {
+        c = computeDecimal(str, start + 1, end);
+    } else if(str[start] == '-') {
+        c = computeDecimal(str, start + 1, end);
+        c = c * -1;
+    } else {
+        c = computeDecimal(str, start, end);
+    }
+    return c;
 }
 
 antlrcpp::Any SemPass1::visitProgram(SysYParser::ProgramContext *ctx) {
@@ -815,29 +867,91 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
     Temp n;
     if(ctx->Decimal()) {
         std::string str = ctx->Decimal()->getText();
-        int ans = 0, len = str.length();
-        for(int i = 0; i < len; ++i) ans = ans*10 + (str[i]^48);
+        int len = str.length();
+        int ans = computeDecimal(str, 0, len);
         n = tr->genLoadImm4(ans);
     } else if(ctx->Octal()) {
         std::string str = ctx->Octal()->getText();
-        int ans = 0, len = str.length();
-        for(int i = 1; i < len; ++i) ans = ans*8 + (str[i]^48);
+        int len = str.length();
+        int ans = computeOctal(str, 1, len);
         n = tr->genLoadImm4(ans);
     } else if(ctx->Hexadecimal()) {
         std::string str = ctx->Hexadecimal()->getText();
-        int ans = 0, len = str.length();
-        for(int i = 2; i < len; ++i)
-        {
-            if(str[i] < 'A') ans = ans*16 + (str[i]^48);
-            else if(str[i] < 'Z')ans = ans*16 + 10 + (str[i]-'A');
-            else ans = ans*16 + 10 + (str[i]-'a');
-        }
+        int len = str.length();
+        int ans = computeHexadecimal(str, 2, len);
         n = tr->genLoadImm4(ans);
+    } else if(ctx->DFloat1()) { // Decimal Float Case1 (eg. 2.2e-3) A.B e C
+        std::string str = ctx->DFloat1()->getText();
+        float ans = 0.0;
+        int p = str.find('.');
+        int q = str.find('e');
+        if(q == -1) q = str.find('E');
+        int len = str.length();
+        int a = computeDecimal(str, 0, p); // compute part A
+        int b = 0, m = 1;
+        if(q == -1) { // no exponent part
+            for(int i = p + 1; i < len; ++i) {b = b*10 + (str[i]^48); m = m*10;}
+        } else {
+            for(int i = p + 1; i < q; ++i) {b = b*10 + (str[i]^48); m = m*10;}
+        }
+        ans = b * 1.0 / m; // compute part B
+        ans += a;
+        int c = 0;
+        if(q != -1) c = computeExponentPart(str, q + 1, len); // compute part C
+        ans = ans * pow(10, c);
+        n = tr->genLoadImm4F(ans);
+    } else if(ctx->DFloat2()) { // Decimal Float Case2 (eg. 5e-6) A e C
+        std::string str = ctx->DFloat2()->getText();
+        float ans = 0.0;
+        int q = str.find('e');
+        if(q == -1) q = str.find('E');
+        int len = str.length();
+        int a = computeDecimal(str, 0, q); // compute part A
+        ans = a * 1.0;
+        int c = 0;
+        if(q != -1) {
+            c = computeExponentPart(str, q + 1, len); // compute part C
+        } else {
+            knpc_assert(false); // must have exponent part in this case!
+        }
+        ans = ans * pow(10, c);
+        n = tr->genLoadImm4F(ans);
+    } else if(ctx->HFloat1()) { // Hexadecimal Float Case1 (eg. 0x.AP-3) 0x A.B p C
+        std::string str = ctx->HFloat1()->getText();
+        float ans = 0.0;
+        int p = str.find('.');
+        int q = str.find('p');
+        if(q == -1) q = str.find('P');
+        int len = str.length();
+        int a = computeHexadecimal(str, 0, p); // compute part A
+        ans = computeHexadecimalF(str, p + 1, q); // compute part B
+        ans += a;
+        int c = 0;
+        if(q != -1) {
+            c = computeExponentPart(str, q + 1, len); // compute part C
+        } else {
+            knpc_assert(false); // must have exponent part in this case!
+        }
+        ans = ans * pow(10, c);
+        n = tr->genLoadImm4F(ans);
+    } else if(ctx->HFloat2()) { // Hexadecimal Float Case2 (eg. 0x3fp-4) 0x A p C
+        std::string str = ctx->HFloat2()->getText();
+        float ans = 0.0;
+        int q = str.find('p');
+        if(q == -1) q = str.find('P');
+        int len = str.length();
+        int a = computeHexadecimal(str, 0, q); // compute part A
+        ans = a * 1.0;
+        int c = 0;
+        if(q != -1) {
+            c = computeExponentPart(str, q + 1, len); // compute part C
+        } else {
+            knpc_assert(false); // must have exponent part in this case!
+        }
+        ans = ans * pow(10, c);
+        n = tr->genLoadImm4F(ans);
     } else {
-        std::string str = ctx->FloatLiteral()->getText();
-        n = tr->genLoadImm4(0); // TODO: Float here! now return 0
-        n->ctval = 0;
-        n->isConst = true;
+        knpc_assert(false);
     }
     tempStack.push(n);
     return nullptr;

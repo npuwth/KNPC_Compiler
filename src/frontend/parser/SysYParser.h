@@ -18,7 +18,8 @@ public:
     T__20 = 21, T__21 = 22, T__22 = 23, WhiteSpace = 24, LineComment = 25, 
     BlockComment = 26, Void = 27, Int = 28, Float = 29, Const = 30, If = 31, 
     Else = 32, While = 33, Break = 34, Continue = 35, Return = 36, Decimal = 37, 
-    Octal = 38, Hexadecimal = 39, FloatLiteral = 40, Identifier = 41
+    Octal = 38, Hexadecimal = 39, DFloat1 = 40, DFloat2 = 41, HFloat1 = 42, 
+    HFloat2 = 43, Identifier = 44
   };
 
   enum {
@@ -568,7 +569,10 @@ public:
     antlr4::tree::TerminalNode *Decimal();
     antlr4::tree::TerminalNode *Octal();
     antlr4::tree::TerminalNode *Hexadecimal();
-    antlr4::tree::TerminalNode *FloatLiteral();
+    antlr4::tree::TerminalNode *DFloat1();
+    antlr4::tree::TerminalNode *DFloat2();
+    antlr4::tree::TerminalNode *HFloat1();
+    antlr4::tree::TerminalNode *HFloat2();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
