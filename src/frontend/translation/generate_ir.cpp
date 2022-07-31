@@ -12,6 +12,7 @@
 
 #define RESET_OFFSET() tr->getOffsetCounter()->reset(OffsetCounter::PARAMETER)
 #define NEXT_OFFSET(x) tr->getOffsetCounter()->next(OffsetCounter::PARAMETER, x)
+#define FLOAT_ZERO 1e-6
 
 // global tmp value for use in translation(as the ret value of the previous function)
 Type *p_type = NULL;
@@ -96,7 +97,7 @@ util::Vector<float> SemPass1::get_array_constInitValsf(SysYParser::ConstInitValC
         }
         int j = ret.size();
         while(j < dims[d] * dimSize[d]) { // pad zero in a { }
-            ret.push_back(0.0);
+            ret.push_back(0.0f);
             j++;
         }
     }
@@ -141,7 +142,7 @@ util::Vector<Temp> SemPass1::get_array_initValsf(SysYParser::InitValContext *ctx
         }
         int j = ret.size();
         while(j < dims[d] * dimSize[d]) { // pad zero in a { }
-            Temp imm = tr->genLoadImm4FNoChainUp(0.0);
+            Temp imm = tr->genLoadImm4NoChainUp(0.0f);
             ret.push_back(imm);
             j++;
         }
@@ -178,7 +179,7 @@ void SemPass1::callMemset(Temp addr, Temp val, Temp size) { // assign n bytes st
 Temp SemPass1::callFloat2Int(Temp src) { // call this function to convert from float to int
     knpc_assert(src->isFloat);
     if(src->isConst) {
-        return tr->genLoadImm4(src->ctvalf);
+        return tr->genLoadImm4((int)src->ctvalf);
     } else {
         tr->genParam(src);
         return tr->genCall(runtimeLabels[14]);
@@ -188,7 +189,7 @@ Temp SemPass1::callFloat2Int(Temp src) { // call this function to convert from f
 Temp SemPass1::callInt2Float(Temp src) { // call this function to convert from int to float
     knpc_assert(!src->isFloat);
     if(src->isConst) {
-        return tr->genLoadImm4F(src->ctval);
+        return tr->genLoadImm4((float)src->ctval);
     } else {
         tr->genParam(src);
         return tr->genCall(runtimeLabels[15]); // TODO: Need to modify in genCall for float support!
@@ -197,38 +198,66 @@ Temp SemPass1::callInt2Float(Temp src) { // call this function to convert from i
 
 int computeDecimal(std::string str, int start, int end) {
     int ans = 0;
-    for(int i = start; i < end; ++i) ans = ans*10 + (str[i]^48);
+    for(int i = start; i < end; ++i) ans = ans * 10 + (str[i]^48);
     return ans;
 }
 
 int computeOctal(std::string str, int start, int end) {
     int ans = 0;
-    for(int i = start; i < end; ++i) ans = ans*8 + (str[i]^48);
+    for(int i = start; i < end; ++i) ans = ans * 8 + (str[i]^48);
     return ans;
 }
 
 int computeHexadecimal(std::string str, int start, int end) {
     int ans = 0;
     for(int i = start; i < end; ++i) {
-        if(str[i] < 'A') ans = ans*16 + (str[i]^48);
-        else if(str[i] < 'Z')ans = ans*16 + 10 + (str[i]-'A');
-        else ans = ans*16 + 10 + (str[i]-'a');
+        if(str[i] < 'A') ans = ans * 16 + (str[i]^48);
+        else if(str[i] < 'Z') ans = ans * 16 + 10 + (str[i]-'A');
+        else ans = ans * 16 + 10 + (str[i]-'a');
     }
     return ans;
 }
 
 float computeHexadecimalF(std::string str, int start, int end) {
-    int a = computeHexadecimal(str, start, end);
-    int b = 2;
-    float ans = 0.0;
-    while(a != 0) {
-        if(a % 2 == 0) {
-            ;
-        } else {
-            ans += (1.0 / b);
+    // int a = computeHexadecimal(str, start, end);
+    // int b = 2;
+    // float ans = 0.0f;
+    // while(a != 0) {
+    //     if(a % 2 == 0) {
+    //         ;
+    //     } else {
+    //         ans += (1.0 / b);
+    //     }
+    //     a = a / 2;
+    //     b = b * 2;
+    // }
+    float ans = 0.0f;
+    double b = 0.5;
+    for(int i = start; i < end; ++i) {
+        int a = 0;
+        int c[4] = {0};
+        if(str[i] < 'A') a = (str[i]^48);
+        else if(str[i] < 'Z') a = 10 + (str[i]-'A');
+        else a = 10 + (str[i]-'a');
+        c[0] = a / 8; a = a % 8;
+        c[1] = a / 4; a = a % 4;
+        c[2] = a / 2; a = a % 2;
+        c[3] = a / 1;
+        for(int j = 0; j < 4; ++j) {
+            ans += c[j] * b;
+            b = b * 0.5;
         }
-        a = a / 2;
-        b = b * 2;
+    }
+    return ans;
+}
+
+float computeDecimalF(std::string str, int start, int end) {
+    float ans = 0.0f;
+    double b = 0.1;
+    for(int i = start; i < end; ++i) {
+        int a = str[i]^48;
+        ans += a * b;
+        b = b * 0.1;
     }
     return ans;
 }
@@ -299,6 +328,7 @@ antlrcpp::Any SemPass1::visitVarDefLi(SysYParser::VarDefLiContext *ctx) {
 antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {            // const
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
+    bool isFloat = (p_type->equal(BaseType::Float));
     util::Vector<int> dims;
     if(ctx->constExpLi()) { // is array variable
         dims = get_array_dims(ctx->constExpLi());
@@ -312,20 +342,38 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
+    if(isFloat) sym->setFloat();             // This sym is Float!!!
+    sym->setConst();                         // This sym is Const!!!
     // const variable must be init here.
     knpc_assert(ctx->constInitVal());
     if(sym->getType()->isBaseType()) {                                              // 1 base type
         ctx->constInitVal()->accept(this);
         Temp n = tempStack.top();tempStack.pop();
         knpc_assert(n->isConst); // must be a const
-        util::Vector<int> initVal;
-        initVal.push_back(n->ctval);
-        sym->setConst();
-        sym->setGlobalInit(initVal);
+        // a. give val to the sym (in symbol table)
+        if(isFloat) {
+            util::Vector<float> initVal;
+            initVal.push_back(n->ctvalf);
+            sym->setGlobalInitF(initVal);
+        } else {
+            util::Vector<int> initVal;
+            initVal.push_back(n->ctval);
+            sym->setGlobalInit(initVal);
+        }
+        // b. give val to asm code
         if(sym->isGlobalVar()) {                                                    // 1.1 basetype && global
-            tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), true);
+            if(isFloat) {
+                tr->genGlobalVaribleF(name, n->ctvalf, sym->getType()->getSize(), true);
+            } else {
+                tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), true);
+            }
         } else {                                                                    // 1.2 basetype && local
-            Temp imm = tr->genLoadImm4(n->ctval);
+            Temp imm;
+            if(isFloat) {
+                imm = tr->genLoadImm4(n->ctvalf);
+            } else {
+                imm = tr->genLoadImm4(n->ctval);
+            }
             sym->attachTemp(imm); // if not global, alloc a temp variable to it
         } // don't need? yes! have const propagation now. but will not effect performance, will be eliminated in dead code elimination.
     } else {                                                                        // 2 array type
@@ -336,34 +384,61 @@ antlrcpp::Any SemPass1::visitConstDef(SysYParser::ConstDefContext *ctx) {       
             dimSize.insert(dimSize.begin(), c_dim);
             c_dim = c_dim * (*it); 
         }
-        util::Vector<int> initVals = get_array_constInitVals(ctx->constInitVal(), dims, dimSize, 0);
-        sym->setConst();
-        sym->setGlobalInit(initVals);
-        int tag = 0;
-        for(int i : initVals) {
-            if(i != 0) tag = 1;
+        util::Vector<int> initVals;
+        util::Vector<float> initValsf;
+        // a. give val to the sym (in symbol table)
+        if(isFloat) {
+            initValsf = get_array_constInitValsf(ctx->constInitVal(), dims, dimSize, 0);
+            sym->setGlobalInitF(initValsf);
+            int tag = 0;
+            for(float i : initValsf) {
+                if(i > FLOAT_ZERO || i < -FLOAT_ZERO) tag = 1;
+            }
+            if(tag == 0) initValsf.clear(); // if all zero then bss
+        } else {
+            initVals = get_array_constInitVals(ctx->constInitVal(), dims, dimSize, 0);
+            sym->setGlobalInit(initVals);
+            int tag = 0;
+            for(int i : initVals) {
+                if(i != 0) tag = 1;
+            }
+            if(tag == 0) initVals.clear(); // if all zero then bss
         }
-        if(tag == 0) initVals.clear(); // if all zero then bss
         #ifdef debug_on
         printf("The array init values are: "); // debug
         for(size_t i = 0; i < initVals.size(); i++) printf("%d ", initVals[i]); // debug
         #endif
+        // b. give val to asm code
         if(sym->isGlobalVar()) {                                                    // 2.1 arraytype && global
-            tr->genGlobalArray(name, initVals, sym->getType()->getSize(), true);
+            if(isFloat) {
+                tr->genGlobalArrayF(name, initValsf, sym->getType()->getSize(), true);
+            } else {
+                tr->genGlobalArray(name, initVals, sym->getType()->getSize(), true);
+            }
         } else {                                                                    // 2.2 arraytype && local
             int offset = 0;
-            Temp arr = tr->allocNewTempI4(sym->getType()->getSize()); // alloc space in stack
+            Temp arr = tr->allocNewTempI4(sym->getType()->getSize(), isFloat); // alloc space in stack
             arr->isConst = true;
             sym->attachTemp(arr);
             Temp val = tr->genLoadImm4(0);
             Temp size = tr->genLoadImm4(sym->getType()->getSize()); // no need to *4, already bytes size
             callMemset(arr, val, size); // use memset to optimize codeGen
-            for(int initVal : initVals) {
-                if(initVal != 0) {
-                    Temp x = tr->genLoadImm4(initVal);
-                    tr->genStore(x, arr, offset); // store initVals to arr in stack
+            if(isFloat) {
+                for(float initVal : initValsf) {
+                    if(initVal > FLOAT_ZERO || initVal < -FLOAT_ZERO) {
+                        Temp x = tr->genLoadImm4(initVal);
+                        tr->genStore(x, arr, offset); // store initVals to arr in stack
+                    }
+                    offset += 4;
                 }
-                offset += 4;
+            } else {
+                for(int initVal : initVals) {
+                    if(initVal != 0) {
+                        Temp x = tr->genLoadImm4(initVal);
+                        tr->genStore(x, arr, offset); // store initVals to arr in stack
+                    }
+                    offset += 4;
+                }
             }
         } // don't need? no! if the index is not a const!
     }
@@ -377,6 +452,7 @@ antlrcpp::Any SemPass1::visitConstInitVal(SysYParser::ConstInitValContext *ctx) 
 antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not const
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
+    bool isFloat = (p_type->equal(BaseType::Float));
     util::Vector<int> dims;
     if(ctx->constExpLi()) {
         dims = get_array_dims(ctx->constExpLi());
@@ -390,20 +466,30 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not cons
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
+    if(isFloat) sym->setFloat();
     if(ctx->initVal()) {                                           // has initVal
         if(sym->getType()->isBaseType()) {                         // 1 base type
             ctx->initVal()->accept(this);
             Temp n = tempStack.top();tempStack.pop();
+            // give val to asm code
             if(sym->isGlobalVar()) {                               // 1.1 basetype && global
                 if(n->isConst) {
-                    tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), false);
+                    if(isFloat) {
+                        tr->genGlobalVaribleF(name, n->ctvalf, sym->getType()->getSize(), false);
+                    } else {
+                        tr->genGlobalVarible(name, n->ctval, sym->getType()->getSize(), false);
+                    }
                 } else {
-                    tr->genGlobalVarible(name, 0, sym->getType()->getSize(), false);
-                    Temp val = tr->genLoadSymbol(name);
+                    if(isFloat) {
+                        tr->genGlobalVaribleF(name, 0.0f, sym->getType()->getSize(), false);
+                    } else {
+                        tr->genGlobalVarible(name, 0, sym->getType()->getSize(), false);
+                    }
+                    Temp val = tr->genLoadSymbol(name, isFloat); // TODO:
                     tr->genStore(n, val, 0);
                 }
             } else {                                               // 1.2 basetype && local
-                sym->attachTemp(tr->getNewTempI4()); // get local object then assign
+                sym->attachTemp(tr->getNewTempI4(isFloat)); // get local object then assign
                 tr->genAssign(sym->getTemp(), n);
             }
         } else {                                                   // 2 array type
@@ -414,17 +500,34 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not cons
                 dimSize.insert(dimSize.begin(), c_dim);
                 c_dim = c_dim * (*it); 
             }
-            util::Vector<Temp> initVals = get_array_initVals(ctx->initVal(), dims, dimSize, 0);
+            util::Vector<Temp> initVals;
+            if(isFloat) {
+                initVals = get_array_initValsf(ctx->initVal(), dims, dimSize, 0);
+            } else {
+                initVals = get_array_initVals(ctx->initVal(), dims, dimSize, 0);
+            }
             if(sym->isGlobalVar()) {                               // 2.1 arraytype && global
-                util::Vector<int> vals;
-                int tag = 0;
-                for(size_t i = 0; i < initVals.size(); i++) {
-                    // knpc_assert(initVals[i]->isConst);
-                    vals.push_back(initVals[i]->ctval);
-                    if(initVals[i]->ctval != 0) tag = 1;
+                if(isFloat) {
+                    util::Vector<float> vals;
+                    int tag = 0;
+                    for(size_t i = 0; i < initVals.size(); i++) {
+                        vals.push_back(initVals[i]->ctvalf);
+                        float t = initVals[i]->ctvalf;
+                        if(t > FLOAT_ZERO || t < -FLOAT_ZERO) tag = 1;
+                    }
+                    if(tag == 0) vals.clear(); // if all zero then bss
+                    tr->genGlobalArrayF(name, vals, sym->getType()->getSize(), false);
+                } else {
+                    util::Vector<int> vals;
+                    int tag = 0;
+                    for(size_t i = 0; i < initVals.size(); i++) {
+                        // knpc_assert(initVals[i]->isConst);
+                        vals.push_back(initVals[i]->ctval);
+                        if(initVals[i]->ctval != 0) tag = 1;
+                    }
+                    if(tag == 0) vals.clear(); // if all zero then bss
+                    tr->genGlobalArray(name, vals, sym->getType()->getSize(), false); 
                 }
-                if(tag == 0) vals.clear(); // if all zero then bss
-                tr->genGlobalArray(name, vals, sym->getType()->getSize(), false); 
                 // TODO: global arr's initval must be const? no, but must has a init val
                 // here if use genStore to assign initval, the code where be generated nowhere(because not in a function)
 
@@ -436,34 +539,54 @@ antlrcpp::Any SemPass1::visitVarDef(SysYParser::VarDefContext *ctx) {// not cons
                 // }
             } else {                                               // 2.2 arraytype && local
                 int offset = 0;
-                Temp arr = tr->allocNewTempI4(sym->getType()->getSize());
+                Temp arr = tr->allocNewTempI4(sym->getType()->getSize(), isFloat);
                 sym->attachTemp(arr);
                 Temp val = tr->genLoadImm4(0);
                 Temp size = tr->genLoadImm4(sym->getType()->getSize());
                 callMemset(arr, val, size); // use memset to optimize codeGen
-                for(Temp initVal : initVals) {
-                    if(initVal->isConst && initVal->ctval == 0) {
-                        ;
-                    } else {
-                        tr->genStore(initVal, arr, offset);
+                if(isFloat) {
+                    for(Temp initVal : initVals) {
+                        if(initVal->isConst && initVal->ctvalf < FLOAT_ZERO && initVal->ctvalf > -FLOAT_ZERO) {
+                            ;
+                        } else {
+                            tr->genStore(initVal, arr, offset);
+                        }
+                        offset += 4;
                     }
-                    offset += 4;
+                } else {
+                    for(Temp initVal : initVals) {
+                        if(initVal->isConst && initVal->ctval == 0) {
+                            ;
+                        } else {
+                            tr->genStore(initVal, arr, offset);
+                        }
+                        offset += 4;
+                    }
                 }
             }
         }
     } else {                                                        // no init val
         if(sym->getType()->isBaseType()) {                          // 1 base type
             if(sym->isGlobalVar()) {                                // 1.1 basetype && global
-                tr->genGlobalVarible(name, 0, sym->getType()->getSize(), false); // initVal is 0
+                if(isFloat) {
+                    tr->genGlobalVaribleF(name, 0.0f, sym->getType()->getSize(), false);
+                } else {
+                    tr->genGlobalVarible(name, 0, sym->getType()->getSize(), false); // initVal is 0
+                }
             } else {                                                // 1.2 basetype && local
-                sym->attachTemp(tr->getNewTempI4());
+                sym->attachTemp(tr->getNewTempI4(isFloat));
             }
         } else {                                                    // 2 array type
             if(sym->isGlobalVar()) {                                // 2.1 arraytype && global
-                util::Vector<int> p; // p is empty
-                tr->genGlobalArray(name, p, sym->getType()->getSize(), false); // initVal is 0
+                if(isFloat) {
+                    util::Vector<float> p;
+                    tr->genGlobalArrayF(name, p, sym->getType()->getSize(), false);
+                } else {
+                    util::Vector<int> p; // p is empty
+                    tr->genGlobalArray(name, p, sym->getType()->getSize(), false); // initVal is 0
+                }
             } else {                                                // 2.2 arraytype && local
-                sym->attachTemp(tr->allocNewTempI4(sym->getType()->getSize()));
+                sym->attachTemp(tr->allocNewTempI4(sym->getType()->getSize(), isFloat));
             }
         }
     }
@@ -478,6 +601,8 @@ antlrcpp::Any SemPass1::visitFuncDef(SysYParser::FuncDefContext *ctx) {
     ctx->funcType()->accept(this);
     std::string name = ctx->Identifier()->getText();
     Function *sym = new Function(name, p_type);
+    bool isFloat = (p_type->equal(BaseType::Float));
+    if(isFloat) sym->setFloat(); // return val is float
     sym->attachEntryLabel(tr->getNewEntryLabel(sym));
     Symbol *s = scopes->lookup(name, false);
     if(s != NULL) {
@@ -546,6 +671,7 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
     ctx->bType()->accept(this);
     std::string name = ctx->Identifier()->getText();
     Variable *sym;
+    bool isFloat = (p_type->equal(BaseType::Float));
     if(ctx->constExpLi()) { // is array type
         util::Vector<int> dims = get_array_dims(ctx->constExpLi());
         dims.insert(dims.begin(), 0); // first dim length can be assigned as 0, won't influence correctness in assign stmt.
@@ -564,8 +690,9 @@ antlrcpp::Any SemPass1::visitFuncFParam(SysYParser::FuncFParamContext *ctx) {
         throw new DeclConflictError(name, sym);
     }
     scopes->declare(sym);
+    if(isFloat) sym->setFloat();
     sym->setOrder(order++);
-    sym->attachTemp(tr->getNewTempI4()); // if array, will pass pointer(head address), so also I4
+    sym->attachTemp(tr->getNewTempI4(isFloat)); // if array, will pass pointer(head address), so also I4
     sym->offset = NEXT_OFFSET(sym->getTemp()->size);
     sym->setParameter();
     return nullptr;
@@ -799,7 +926,11 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
                 for(int i = r_dim - 1; i >= 0; i--) {
                     index += nums[i]->ctval * (dimSize[i] / 4);
                 }
-                n = tr->genLoadImm4(sym->getGlobalInit(index));
+                if(sym->isFloat()) {
+                    n = tr->genLoadImm4(sym->getGlobalInitF(index));
+                } else {
+                    n = tr->genLoadImm4(sym->getGlobalInit(index));
+                }
             } else {                                                                // 1.1.2 global array not const
                 for(int i = r_dim - 1; i >= 0; i--) {
                     x = tr->genLoadImm4(dimSize[i]);
@@ -810,7 +941,11 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
             }
         } else {                                                 // 1.2 global && basetype
             if(sym->isConst()) {
-                n = tr->genLoadImm4(sym->getGlobalInit(0));
+                if(sym->isFloat()) {
+                    n = tr->genLoadImm4(sym->getGlobalInitF(0));
+                } else {
+                    n = tr->genLoadImm4(sym->getGlobalInit(0));
+                }
             } else {
                 n = tr->genLoad(n, 0);
             }
@@ -840,7 +975,11 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
                 for(int i = r_dim - 1; i >= 0; i--) {
                     index += nums[i]->ctval * (dimSize[i] / 4);
                 }
-                n = tr->genLoadImm4(sym->getGlobalInit(index));
+                if(sym->isFloat()) {
+                    n = tr->genLoadImm4(sym->getGlobalInitF(index));
+                } else {
+                    n = tr->genLoadImm4(sym->getGlobalInit(index));
+                }
             } else {                                                                // 2.1.2 local array not const
                 for(int i = r_dim - 1; i >= 0; i--) {
                     x = tr->genLoadImm4(dimSize[i]);
@@ -851,7 +990,11 @@ antlrcpp::Any SemPass1::visitPrimary2(SysYParser::Primary2Context *ctx) {
             }
         } else {                                                  // 2.2 local && basetype
             if(sym->isConst()) {
-                n = tr->genLoadImm4(sym->getGlobalInit(0));
+                if(sym->isFloat()) {
+                    n = tr->genLoadImm4(sym->getGlobalInitF(0));
+                } else {
+                    n = tr->genLoadImm4(sym->getGlobalInit(0));
+                }
             }
         }
     }
@@ -882,27 +1025,25 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
         n = tr->genLoadImm4(ans);
     } else if(ctx->DFloat1()) { // Decimal Float Case1 (eg. 2.2e-3) A.B e C
         std::string str = ctx->DFloat1()->getText();
-        float ans = 0.0;
+        float ans = 0.0f;
         int p = str.find('.');
         int q = str.find('e');
         if(q == -1) q = str.find('E');
         int len = str.length();
         int a = computeDecimal(str, 0, p); // compute part A
-        int b = 0, m = 1;
         if(q == -1) { // no exponent part
-            for(int i = p + 1; i < len; ++i) {b = b*10 + (str[i]^48); m = m*10;}
+            ans = computeDecimalF(str, p + 1, len); // compute part B
         } else {
-            for(int i = p + 1; i < q; ++i) {b = b*10 + (str[i]^48); m = m*10;}
+            ans = computeDecimalF(str, p + 1, q);
         }
-        ans = b * 1.0 / m; // compute part B
         ans += a;
         int c = 0;
         if(q != -1) c = computeExponentPart(str, q + 1, len); // compute part C
         ans = ans * pow(10, c);
-        n = tr->genLoadImm4F(ans);
+        n = tr->genLoadImm4(ans);
     } else if(ctx->DFloat2()) { // Decimal Float Case2 (eg. 5e-6) A e C
         std::string str = ctx->DFloat2()->getText();
-        float ans = 0.0;
+        float ans = 0.0f;
         int q = str.find('e');
         if(q == -1) q = str.find('E');
         int len = str.length();
@@ -915,10 +1056,10 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
             knpc_assert(false); // must have exponent part in this case!
         }
         ans = ans * pow(10, c);
-        n = tr->genLoadImm4F(ans);
+        n = tr->genLoadImm4(ans);
     } else if(ctx->HFloat1()) { // Hexadecimal Float Case1 (eg. 0x.AP-3) 0x A.B p C
         std::string str = ctx->HFloat1()->getText();
-        float ans = 0.0;
+        float ans = 0.0f;
         int p = str.find('.');
         int q = str.find('p');
         if(q == -1) q = str.find('P');
@@ -933,10 +1074,10 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
             knpc_assert(false); // must have exponent part in this case!
         }
         ans = ans * pow(10, c);
-        n = tr->genLoadImm4F(ans);
+        n = tr->genLoadImm4(ans);
     } else if(ctx->HFloat2()) { // Hexadecimal Float Case2 (eg. 0x3fp-4) 0x A p C
         std::string str = ctx->HFloat2()->getText();
-        float ans = 0.0;
+        float ans = 0.0f;
         int q = str.find('p');
         if(q == -1) q = str.find('P');
         int len = str.length();
@@ -949,7 +1090,7 @@ antlrcpp::Any SemPass1::visitNumber(SysYParser::NumberContext *ctx) {
             knpc_assert(false); // must have exponent part in this case!
         }
         ans = ans * pow(10, c);
-        n = tr->genLoadImm4F(ans);
+        n = tr->genLoadImm4(ans);
     } else {
         knpc_assert(false);
     }
@@ -986,7 +1127,7 @@ antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
     } else if(name == "memset") {
         n = tr->genCall(runtimeLabels[9]);
     } else if(name == "getfloat") {
-        n = tr->genCall(runtimeLabels[10]);
+        n = tr->genCall(runtimeLabels[10], true);
     } else if(name == "getfarray") {
         n = tr->genCall(runtimeLabels[11]);
     } else if(name == "putfloat") {
@@ -995,8 +1136,9 @@ antlrcpp::Any SemPass1::visitUnary2(SysYParser::Unary2Context *ctx) {
         n = tr->genCall(runtimeLabels[13]);
     } else {
         Function *sym = (Function *)(scopes->lookup(name, true));
+        bool isFloat = sym->isFloat();
         knpc_assert(sym);
-        n = tr->genCall(sym->getEntryLabel()); // 2. call function
+        n = tr->genCall(sym->getEntryLabel(), isFloat); // 2. call function
     }
     tempStack.push(n);
     return nullptr;
@@ -1008,12 +1150,22 @@ antlrcpp::Any SemPass1::visitUnary3(SysYParser::Unary3Context *ctx) {
     Temp r = tempStack.top();tempStack.pop();
     Temp n;
     if(r->isConst) {
-        if(p_unaryOp == 0) {
-            n = r;
-        } else if(p_unaryOp == 1) {
-            n = tr->genLoadImm4(-1*r->ctval);
+        if(r->isFloat) {
+            if(p_unaryOp == 0) {
+                n = r;
+            } else if(p_unaryOp == 1) {
+                n = tr->genLoadImm4(-1 * r->ctvalf);
+            } else {
+                n = tr->genLoadImm4(r->ctvalf < FLOAT_ZERO && r->ctvalf > -FLOAT_ZERO); // seqz
+            }
         } else {
-            n = tr->genLoadImm4(r->ctval == 0); // seqz
+            if(p_unaryOp == 0) {
+                n = r;
+            } else if(p_unaryOp == 1) {
+                n = tr->genLoadImm4(-1 * r->ctval);
+            } else {
+                n = tr->genLoadImm4(r->ctval == 0); // seqz
+            }
         }
     } else {
         if(p_unaryOp == 0) {
@@ -1047,14 +1199,29 @@ antlrcpp::Any SemPass1::visitMulExp(SysYParser::MulExpContext *ctx) {
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(r->isConst && l->isConst) {
-            if(ctx->children[1]->getText()[0] == '*') {
-                n = tr->genLoadImm4(l->ctval*r->ctval);
-            } else if(ctx->children[1]->getText()[0] == '/') {
-                knpc_assert(r->ctval);
-                n = tr->genLoadImm4(l->ctval / r->ctval);
+            if(!r->isFloat && !l->isFloat) {
+                if(ctx->children[1]->getText()[0] == '*') {
+                    n = tr->genLoadImm4(l->ctval * r->ctval);
+                } else if(ctx->children[1]->getText()[0] == '/') {
+                    knpc_assert(r->ctval);
+                    n = tr->genLoadImm4(l->ctval / r->ctval);
+                } else {
+                    knpc_assert(r->ctval);
+                    n = tr->genLoadImm4(l->ctval % r->ctval);
+                }
             } else {
-                knpc_assert(r->ctval);
-                n = tr->genLoadImm4(l->ctval % r->ctval);
+                float a = 0.0f, b = 0.0f;
+                if(r->isFloat) {a = r->ctvalf;} else {a = r->ctval;}
+                if(l->isFloat) {b = l->ctvalf;} else {b = l->ctval;}
+                if(ctx->children[1]->getText()[0] == '*') {
+                    n = tr->genLoadImm4(a * b);
+                } else if(ctx->children[1]->getText()[0] == '/') {
+                    knpc_assert(b > FLOAT_ZERO || b < -FLOAT_ZERO);
+                    n = tr->genLoadImm4(a / b);
+                } else {
+                    knpc_assert((int)b);
+                    n = tr->genLoadImm4((int)a % (int)b);
+                }
             }
         } else {
             if(ctx->children[1]->getText()[0] == '*') {
@@ -1082,10 +1249,21 @@ antlrcpp::Any SemPass1::visitAddExp(SysYParser::AddExpContext *ctx) {
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(r->isConst && l->isConst) {
-            if(ctx->children[1]->getText()[0] == '+') {
-                n = tr->genLoadImm4(l->ctval + r->ctval);
+            if(!r->isFloat && !l->isFloat) {
+                if(ctx->children[1]->getText()[0] == '+') {
+                    n = tr->genLoadImm4(l->ctval + r->ctval);
+                } else {
+                    n = tr->genLoadImm4(l->ctval - r->ctval);
+                }
             } else {
-                n = tr->genLoadImm4(l->ctval - r->ctval);
+                float a = 0.0f, b = 0.0f;
+                if(r->isFloat) {a = r->ctvalf;} else {a = r->ctval;}
+                if(l->isFloat) {b = l->ctvalf;} else {b = l->ctval;}
+                if(ctx->children[1]->getText()[0] == '+') {
+                    n = tr->genLoadImm4(a + b);
+                } else {
+                    n = tr->genLoadImm4(a - b);
+                }
             }
         } else {
             if(ctx->children[1]->getText()[0] == '+') {
@@ -1111,19 +1289,40 @@ antlrcpp::Any SemPass1::visitRelExp(SysYParser::RelExpContext *ctx) {
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(r->isConst && l->isConst) {
-            if(ctx->children[1]->getText()[0] == '<') { // <
-                if(ctx->children[1]->getText().length() == 1) {
-                    n = tr->genLoadImm4(l->ctval < r->ctval);
-                }    
-                else {
-                    n = tr->genLoadImm4(l->ctval <= r->ctval);
+            if(!r->isFloat && !l->isFloat) {
+                if(ctx->children[1]->getText()[0] == '<') { // <
+                    if(ctx->children[1]->getText().length() == 1) {
+                        n = tr->genLoadImm4(l->ctval < r->ctval);
+                    }    
+                    else {
+                        n = tr->genLoadImm4(l->ctval <= r->ctval);
+                    }
+                } else { // >
+                    if(ctx->children[1]->getText().length() == 1) {
+                        n = tr->genLoadImm4(l->ctval > r->ctval);
+                    }
+                    else {
+                        n = tr->genLoadImm4(l->ctval >= r->ctval);
+                    }
                 }
-            } else { // >
-                if(ctx->children[1]->getText().length() == 1) {
-                    n = tr->genLoadImm4(l->ctval > r->ctval);
-                }
-                else {
-                    n = tr->genLoadImm4(l->ctval >= r->ctval);
+            } else {
+                float a = 0.0f, b = 0.0f;
+                if(r->isFloat) {a = r->ctvalf;} else {a = r->ctval;}
+                if(l->isFloat) {b = l->ctvalf;} else {b = l->ctval;}
+                if(ctx->children[1]->getText()[0] == '<') { // <
+                    if(ctx->children[1]->getText().length() == 1) {
+                        n = tr->genLoadImm4(a < b);
+                    }    
+                    else {
+                        n = tr->genLoadImm4(a <= b);
+                    }
+                } else { // >
+                    if(ctx->children[1]->getText().length() == 1) {
+                        n = tr->genLoadImm4(a > b);
+                    }
+                    else {
+                        n = tr->genLoadImm4(a >= b);
+                    }
                 }
             }
         } else {
@@ -1160,10 +1359,22 @@ antlrcpp::Any SemPass1::visitEqExp(SysYParser::EqExpContext *ctx) {
         Temp r = tempStack.top();tempStack.pop();
         Temp l = tempStack.top();tempStack.pop();
         if(r->isConst && l->isConst) {
-            if(ctx->children[1]->getText()[0] == '=') {
-                n = tr->genLoadImm4(l->ctval == r->ctval);
+            if(!r->isFloat && !l->isFloat) {
+                if(ctx->children[1]->getText()[0] == '=') {
+                    n = tr->genLoadImm4(l->ctval == r->ctval);
+                } else {
+                    n = tr->genLoadImm4(l->ctval != r->ctval);
+                }
             } else {
-                n = tr->genLoadImm4(l->ctval != r->ctval);
+                float a = 0.0f, b = 0.0f;
+                if(r->isFloat) {a = r->ctvalf;} else {a = r->ctval;}
+                if(l->isFloat) {b = l->ctvalf;} else {b = l->ctval;}
+                float res = a - b;
+                if(ctx->children[1]->getText()[0] == '=') {
+                    n = tr->genLoadImm4(res < FLOAT_ZERO && res > -FLOAT_ZERO);
+                } else {
+                    n = tr->genLoadImm4(res > FLOAT_ZERO || res < -FLOAT_ZERO);
+                }
             }
         } else {
             if(ctx->children[1]->getText()[0] == '=') {

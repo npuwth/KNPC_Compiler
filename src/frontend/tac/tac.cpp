@@ -857,6 +857,10 @@ void Tac::dump(std::ostream &os)
         os << "    " << op0.var << " <- " << op1.ival;
         break;
 
+    case LOAD_IMM4F:
+        os << "    " << op0.var << " <- " << op1.fval;
+        break;
+
     case LOAD_SYMBOL:
         os << "    " << op0.var << " = LOAD_SYMBOL " << op1.name;
         break;

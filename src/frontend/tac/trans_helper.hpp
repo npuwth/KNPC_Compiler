@@ -29,8 +29,8 @@ class TransHelper {
     // gets the offset counter of the target machine
     assembly::OffsetCounter *getOffsetCounter(void);
     // allocates a new int32 temporary variable
-    Temp getNewTempI4(void);
-    Temp allocNewTempI4(int);
+    Temp getNewTempI4(bool is_float=false);
+    Temp allocNewTempI4(int, bool is_float=false);
     // allocates a new label
     Label getNewLabel(void);
     // allocates a new entry Label object for function
@@ -68,7 +68,7 @@ class TransHelper {
     // Memory Access           important
     Temp genPop(void);
     void genPush(Temp);
-    Temp genCall(Label);
+    Temp genCall(Label, bool is_float=false);
     void genParam(Temp);
     // Control-flow related
     void genJump(Label);
@@ -77,10 +77,10 @@ class TransHelper {
     // Miscellaneous 其他       important
     void genAssign(Temp, Temp);
     Temp genLoadImm4(int);
-    Temp genLoadImm4F(float);
+    Temp genLoadImm4(float);
     Temp genLoadImm4NoChainUp(int);
-    Temp genLoadImm4FNoChainUp(float);
-    Temp genLoadSymbol(std::string);
+    Temp genLoadImm4NoChainUp(float);
+    Temp genLoadSymbol(std::string, bool is_float=false);
     Temp genLoad(Temp, int);
     void genStore(Temp, Temp, int);
     void genMarkLabel(Label);

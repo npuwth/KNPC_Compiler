@@ -32,6 +32,7 @@ Function::Function(std::string n, Type *resType) {
     order = -1;
     mark = 0;
     defined_in = NULL;
+    is_float = false;
 
     type = new FuncType(resType);
     associated = new FuncScope(this);
@@ -141,3 +142,7 @@ Label Function::getEntryLabel(void) { return entry; }
  *   the attached Functy object
  */
 Functy Function::getFuncty(void) { return attached; }
+
+void Function::setFloat(void) { is_float = true; }
+
+bool Function::isFloat(void) { return is_float; }

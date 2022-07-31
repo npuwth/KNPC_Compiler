@@ -73,8 +73,12 @@ class Variable : public Symbol {
     tac::Temp attached;
     // init value for global variable
     util::Vector<int> global_init;
+    // init value for global variablef
+    util::Vector<float> global_initf;
     // the const flag
     bool is_const;
+    // the float flag
+    bool is_float;
 
   public:
     // Constructor
@@ -87,10 +91,16 @@ class Variable : public Symbol {
     void setConst(void);
     // Tests whether it is const
     bool isConst(void);
+    // Sets the float flag
+    void setFloat(void);
+    // Tests whether it is float
+    bool isFloat(void);
     // Set init value for a global variable
     void setGlobalInit(util::Vector<int> val);
+    void setGlobalInitF(util::Vector<float> val);
     // Get the init value for a global variable
     int getGlobalInit(int);
+    float getGlobalInitF(int);
     // Tests whether it is a global variable
     bool isGlobalVar(void);
     // Tests whether it is a local variable
@@ -115,6 +125,8 @@ class Function : public Symbol {
     tac::Label entry;
     // the associated Functy object
     tac::Functy attached;
+    // the float flag
+    bool is_float;
 
   public:
     // Constructor
@@ -127,6 +139,10 @@ class Function : public Symbol {
     virtual scope::Scope *getScope(void);
     // Gets the type of this symbol
     virtual type::FuncType *getType(void);
+    // Sets the float flag
+    void setFloat(void);
+    // Tests whether it is float
+    bool isFloat(void);
     // Appends a parameter to this function
     void appendParameter(Variable *);
     // Tests whether this symbol is a Function

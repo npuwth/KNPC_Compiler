@@ -30,6 +30,7 @@ Variable::Variable(std::string n, Type *t) {
 
     is_parameter = false;
     is_const = false;
+    is_float = false;
     // global_init = 0;
     attached = NULL;
 
@@ -52,9 +53,17 @@ void Variable::setConst(void) { is_const = true; }
 
 bool Variable::isConst(void) { return is_const; }
 
+void Variable::setFloat(void) { is_float = true; }
+
+bool Variable::isFloat(void) { return is_float; }
+
 void Variable::setGlobalInit(util::Vector<int> val) { global_init = val; }
 
+void Variable::setGlobalInitF(util::Vector<float> val) { global_initf = val; }
+
 int Variable::getGlobalInit(int index) { return global_init[index]; }
+
+float Variable::getGlobalInitF(int index) { return global_initf[index]; }
 
 /* Tests whether it is a local variable.
  *

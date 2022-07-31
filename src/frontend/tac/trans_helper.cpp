@@ -71,15 +71,15 @@ OffsetCounter *TransHelper::getOffsetCounter(void) {
  * NOTE:
  *   we use the variable index to avoid name crash.
  */
-Temp TransHelper::getNewTempI4(void) {
+Temp TransHelper::getNewTempI4(bool is_float) {
     Temp v = new TempVariable();
     v->id = var_count++;
     v->size = 4;
     v->offset = 0;
     v->is_offset_fixed = false;
     v->ctval = 0;
-    v->ctvalf = 0.0;
-    v->isFloat = false;
+    v->ctvalf = 0.0f;
+    v->isFloat = is_float;
     v->isConst = false;
     return v;
 }
@@ -91,8 +91,8 @@ Temp TransHelper::getNewTempI4(void) {
  * NOTE:
  *   we use the variable index to avoid name crash.
  */
-Temp TransHelper::allocNewTempI4(int size) {
-    Temp v = getNewTempI4();
+Temp TransHelper::allocNewTempI4(int size, bool is_float) {
+    Temp v = getNewTempI4(is_float);
     chainUp(Tac::Alloc(v, size));
     return v;
 }
@@ -500,8 +500,8 @@ Temp TransHelper::genPop(void) {
  */
 void TransHelper::genPush(Temp src) { chainUp(Tac::Push(src)); }
 
-Temp TransHelper::genCall(Label label) {
-    Temp c = getNewTempI4(); // TODO: float
+Temp TransHelper::genCall(Label label, bool is_float) {
+    Temp c = getNewTempI4(is_float);
     chainUp(Tac::Call(c, label));
     return c;
 }
@@ -563,7 +563,7 @@ Temp TransHelper::genLoadImm4(int value) {
     return c;
 }
 
-Temp TransHelper::genLoadImm4F(float value) {
+Temp TransHelper::genLoadImm4(float value) {
     Temp c = getNewTempI4();
     c->isConst = true;
     c->isFloat = true;
@@ -579,7 +579,7 @@ Temp TransHelper::genLoadImm4NoChainUp(int value) { // used when get array initv
     return c;
 }
 
-Temp TransHelper::genLoadImm4FNoChainUp(float value) { // used when get array initvals to pad zeroes
+Temp TransHelper::genLoadImm4NoChainUp(float value) { // used when get array initvals to pad zeroes
     Temp c = getNewTempI4();
     c->isConst = true;
     c->isFloat = true;
@@ -587,8 +587,8 @@ Temp TransHelper::genLoadImm4FNoChainUp(float value) { // used when get array in
     return c;
 }
 
-Temp TransHelper::genLoadSymbol(std::string label){
-    Temp c = getNewTempI4();
+Temp TransHelper::genLoadSymbol(std::string label, bool is_float){
+    Temp c = getNewTempI4(is_float);
     chainUp(Tac::LoadSymbol(c, label));
     return c;
 }
